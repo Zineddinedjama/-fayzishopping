@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin{% endblock %} - Fayzishopping</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="admin-body">
+    <div class="admin-layout">
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-header">
+                <a href="{{ url_for('admin.dashboard') }}" class="logo">
+                    <span class="logo-text">Fayzi<strong>shopping</strong></span>
+                </a>
+                <span class="admin-badge">Admin</span>
+            </div>
+            <nav class="admin-nav">
+                <a href="{{ url_for('admin.dashboard') }}" class="admin-nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+                    &#128200; Dashboard
+                </a>
+                <a href="{{ url_for('admin.products_list') }}" class="admin-nav-link {% if 'product' in request.endpoint %}active{% endif %}">
+                    &#128230; Produits
+                </a>
+                <a href="{{ url_for('admin.orders_list') }}" class="admin-nav-link {% if 'order' in request.endpoint %}active{% endif %}">
+                    &#128196; Commandes
+                </a>
+                <a href="{{ url_for('admin.shipping_list') }}" class="admin-nav-link {% if 'shipping' in request.endpoint %}active{% endif %}">
+                    &#128666; Livraison
+                </a>
+                <a href="{{ url_for('admin.categories_list') }}" class="admin-nav-link {% if 'categor' in request.endpoint %}active{% endif %}">
+                    &#128193; Catégories
+                </a>
+                <a href="{{ url_for('admin.messages_list') }}" class="admin-nav-link {% if 'message' in request.endpoint %}active{% endif %}">
+                    &#9993; Messages {% if unread_messages is defined and unread_messages > 0 %}<span class="msg-badge">{{ unread_messages }}</span>{% endif %}
+                </a>
+                <hr class="admin-divider">
+                <a href="{{ url_for('main.index') }}" class="admin-nav-link" target="_blank">
+                    &#127760; Voir le site
+                </a>
+                <a href="{{ url_for('admin.logout') }}" class="admin-nav-link">
+                    &#128682; Déconnexion
+                </a>
+            </nav>
+        </aside>
+        <main class="admin-main">
+            <header class="admin-header">
+                <h2>{% block page_title %}{% endblock %}</h2>
+            </header>
+            <div class="admin-content">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+
+                {% block admin_content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+</body>
+</html>

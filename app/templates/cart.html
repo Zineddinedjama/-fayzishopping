@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Mon panier{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div class="container">
+        <h1>Mon Panier</h1>
+        <nav class="breadcrumb">
+            <a href="{{ url_for('main.index') }}">Accueil</a> / <span>Panier</span>
+        </nav>
+    </div>
+</section>
+
+<section class="section cart-page">
+    <div class="container">
+        {% if cart and cart.items.count() > 0 %}
+        <div class="cart-layout">
+            <div class="cart-items">
+                {% for item in cart.items.all() %}
+                <div class="cart-item" data-item-id="{{ item.id }}">
+                    <div class="cart-item-image">
+                        <a href="{{ url_for('shop.product_detail', slug=item.product.slug) }}">
+                            <img src="{{ item.product.primary_image() or 'https://via.placeholder.com/100x100?text=FZ' }}" alt="{{ item.product.name }}">
+                        </a>
+                    </div>
+                    <div class="cart-item-info">
+                        <a href="{{ url_for('shop.product_detail', slug=item.product.slug) }}" class="cart-item-name">{{ item.product.name }}</a>
+                        {% if item.variant %}
+                        <span class="cart-item-variant">{{ item.variant.display_name() }}</span>
+                        {% endif %}
+                        <span class="cart-item-price">{{ "{:,}".format(item.unit_price()).replace(",", " ") }} DA</span>
+                    </div>
+                    <div class="cart-item-controls">
+                        <div class="quantity-control">
+                            <button class="qty-btn" onclick="updateCartItem({{ item.id }}, {{ item.quantity - 1 }})">-</button>
+                            <input type="number" value="{{ item.quantity }}" readonly>
+                            <button class="qty-btn" onclick="updateCartItem({{ item.id }}, {{ item.quantity + 1 }})">+</button>
+                        </div>
+                        <span class="cart-item-subtotal">{{ "{:,}".format(item.subtotal()).replace(",", " ") }} DA</span>
+                        <button class="btn-remove" onclick="removeCartItem({{ item.id }})" title="Supprimer">&#10005;</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="cart-summary">
+                <div class="cart-summary-box">
+                    <h3>Résumé</h3>
+                    <div class="summary-line">
+                        <span>Sous-total</span>
+                        <span id="cart-subtotal">{{ "{:,}".format(cart.total()).replace(",", " ") }} DA</span>
+                    </div>
+                    <div class="summary-line">
+                        <span>Livraison</span>
+                        <span class="text-muted">Calculée à l'étape suivante</span>
+                    </div>
+                    <hr>
+                    <div class="summary-line summary-total">
+                        <span>Total</span>
+                        <span id="cart-total">{{ "{:,}".format(cart.total()).replace(",", " ") }} DA</span>
+                    </div>
+                    <a href="{{ url_for('checkout.checkout') }}" class="btn btn-primary btn-lg btn-block">
+                        Passer la commande
+                    </a>
+                    <a href="{{ url_for('shop.catalog') }}" class="btn btn-outline btn-block">
+                        Continuer les achats
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <span class="empty-icon">&#128722;</span>
+            <h3>Votre panier est vide</h3>
+            <p>Parcourez notre catalogue et trouvez l'accessoire qu'il vous faut !</p>
+            <a href="{{ url_for('shop.catalog') }}" class="btn btn-primary">Découvrir la boutique</a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

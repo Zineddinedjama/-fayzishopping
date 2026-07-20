@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Boutique{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div class="container">
+        <h1>{% if current_category %}{{ current_category.name }}{% elif current_search %}Résultats pour "{{ current_search }}"{% else %}Boutique{% endif %}</h1>
+        <nav class="breadcrumb">
+            <a href="{{ url_for('main.index') }}">Accueil</a> / 
+            {% if current_category %}
+            <span>{{ current_category.name }}</span>
+            {% else %}
+            <span>Boutique</span>
+            {% endif %}
+        </nav>
+    </div>
+</section>
+
+<section class="section shop-section">
+    <div class="container">
+        <div class="shop-layout">
+            <aside class="shop-sidebar desktop-only">
+                <div class="filter-group">
+                    <h3>Catégories</h3>
+                    <ul class="filter-list">
+                        <li><a href="{{ url_for('shop.catalog') }}" class="{% if not current_category %}active{% endif %}">Toutes</a></li>
+                        {% for cat in categories %}
+                        <li>
+                            <a href="{{ url_for('shop.catalog', category=cat.slug) }}" class="{% if current_category and current_category.id == cat.id %}active{% endif %}">
+                                {{ cat.name }} <span class="count">({{ cat.product_count() }})</span>
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="filter-group">
+                    <h3>Trier par</h3>
+                    <ul class="filter-list">
+                        <li><a href="?{% if current_category %}category={{ current_category.slug }}&{% endif %}sort=newest" class="{% if current_sort == 'newest' or not current_sort %}active{% endif %}">Nouveautés</a></li>
+                        <li><a href="?{% if current_category %}category={{ current_category.slug }}&{% endif %}sort=price_asc" class="{% if current_sort == 'price_asc' %}active{% endif %}">Prix croissant</a></li>
+                        <li><a href="?{% if current_category %}category={{ current_category.slug }}&{% endif %}sort=price_desc" class="{% if current_sort == 'price_desc' %}active{% endif %}">Prix décroissant</a></li>
+                        <li><a href="?{% if current_category %}category={{ current_category.slug }}&{% endif %}sort=name" class="{% if current_sort == 'name' %}active{% endif %}">Alphabétique</a></li>
+                    </ul>
+                </div>
+            </aside>
+
+            <div class="shop-main">
+                <div class="shop-toolbar">
+                    <form class="filter-form mobile-only" action="{{ url_for('shop.catalog') }}" method="GET">
+                        <select name="category" onchange="this.form.submit()">
+                            <option value="">Toutes catégories</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.slug }}" {% if current_category and current_category.id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <select name="sort" onchange="this.form.submit()">
+                            <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>Nouveautés</option>
+                            <option value="price_asc" {% if current_sort == 'price_asc' %}selected{% endif %}>Prix ↑</option>
+                            <option value="price_desc" {% if current_sort == 'price_desc' %}selected{% endif %}>Prix ↓</option>
+                        </select>
+                    </form>
+                    <p class="results-count">{{ pagination.total }} produit{{ 's' if pagination.total != 1 }}</p>
+                </div>
+
+                {% if products %}
+                <div class="products-grid">
+                    {% for product in products %}
+                    {% include 'components/product_card.html' %}
+                    {% endfor %}
+                </div>
+                {% include 'components/pagination.html' %}
+                {% else %}
+                <div class="empty-state">
+                    <span class="empty-icon">&#128269;</span>
+                    <h3>Aucun produit trouvé</h3>
+                    <p>Essayez de modifier vos filtres ou recherchez autre chose.</p>
+                    <a href="{{ url_for('shop.catalog') }}" class="btn btn-primary">Voir tous les produits</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Messages{% endblock %}
+{% block page_title %}Messages de contact{% endblock %}
+
+{% block admin_content %}
+<div class="admin-section">
+    {% if messages %}
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Sujet</th>
+                <th>Email</th>
+                <th>Téléphone</th>
+                <th>Date</th>
+                <th>État</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for msg in messages %}
+            <tr class="{% if not msg.is_read %}unread-row{% endif %}">
+                <td><strong>{{ msg.name }}</strong></td>
+                <td>{{ msg.subject or '-' }}</td>
+                <td>{{ msg.email or '-' }}</td>
+                <td>{{ msg.phone or '-' }}</td>
+                <td>{{ msg.created_at.strftime('%d/%m %H:%M') }}</td>
+                <td>
+                    {% if msg.is_read %}
+                    <span class="status-badge status-confirmed">Lu</span>
+                    {% else %}
+                    <span class="status-badge status-pending">Non lu</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline" onclick="toggleMessage({{ msg.id }}, this)">Voir</button>
+                    {% if not msg.is_read %}
+                    <form method="POST" action="{{ url_for('admin.message_read', msg_id=msg.id) }}" style="display:inline">
+                        <button type="submit" class="btn btn-sm btn-primary">Marquer lu</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr class="message-content-row" id="msg-{{ msg.id }}" style="display:none;">
+                <td colspan="7">
+                    <div class="message-full">
+                        <p><strong>De :</strong> {{ msg.name }}{% if msg.email %} ({{ msg.email }}){% endif %}{% if msg.phone %} - {{ msg.phone }}{% endif %}</p>
+                        <p><strong>Date :</strong> {{ msg.created_at.strftime('%d/%m/%Y à %H:%M') }}</p>
+                        <hr>
+                        <p style="white-space:pre-wrap;">{{ msg.message }}</p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if pagination.pages > 1 %}
+    <div class="pagination" style="margin-top:1rem;">
+        {% if pagination.has_prev %}
+        <a href="?page={{ pagination.prev_num }}" class="page-link">&laquo;</a>
+        {% endif %}
+        {% for p in pagination.iter_pages() %}
+            {% if p %}
+            <a href="?page={{ p }}" class="page-link {% if p == pagination.page %}active{% endif %}">{{ p }}</a>
+            {% endif %}
+        {% endfor %}
+        {% if pagination.has_next %}
+        <a href="?page={{ pagination.next_num }}" class="page-link">&raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="text-center" style="padding:2rem;">
+        <p>Aucun message pour l'instant.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function toggleMessage(id, btn) {
+    const row = document.getElementById('msg-' + id);
+    if (row) {
+        const visible = row.style.display !== 'none';
+        row.style.display = visible ? 'none' : 'table-row';
+        btn.textContent = visible ? 'Voir' : 'Fermer';
+    }
+}
+</script>
+{% endblock %}

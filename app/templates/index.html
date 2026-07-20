@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Accueil{% endblock %}
+
+{% block content %}
+<section class="hero-banner">
+    <div class="container">
+        <div class="hero-content">
+            <span class="hero-badge">Fayzishopping</span>
+            <h1>{{ banner_title }}</h1>
+            <p>{{ banner_subtitle }}</p>
+            <div class="hero-actions">
+                <a href="{{ url_for('shop.catalog') }}" class="btn btn-primary btn-lg">Découvrir la boutique</a>
+                <a href="#featured" class="btn btn-outline btn-lg">Voir les nouveautés</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="features-strip">
+    <div class="container">
+        <div class="features-grid">
+            <div class="feature-item">
+                <span class="feature-icon">&#128666;</span>
+                <div>
+                    <strong>Livraison rapide</strong>
+                    <small>Dans les 58 wilayas</small>
+                </div>
+            </div>
+            <div class="feature-item">
+                <span class="feature-icon">&#128176;</span>
+                <div>
+                    <strong>Paiement à la livraison</strong>
+                    <small>Payez en cash à la réception</small>
+                </div>
+            </div>
+            <div class="feature-item">
+                <span class="feature-icon">&#9989;</span>
+                <div>
+                    <strong>Qualité garantie</strong>
+                    <small>Accessoires testés</small>
+                </div>
+            </div>
+            <div class="feature-item">
+                <span class="feature-icon">&#128222;</span>
+                <div>
+                    <strong>Support WhatsApp</strong>
+                    <small>On est là pour vous</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% if categories %}
+<section class="section categories-section">
+    <div class="container">
+        <h2 class="section-title">Nos Catégories</h2>
+        <div class="categories-grid">
+            {% for cat in categories %}
+            <a href="{{ url_for('shop.catalog', category=cat.slug) }}" class="category-card">
+                <div class="category-card-icon">
+                    {% if 'coque' in cat.name.lower() or 'case' in cat.name.lower() %}📱
+                    {% elif 'chargeur' in cat.name.lower() %}🔌
+                    {% elif 'écouteur' in cat.name.lower() or 'airpod' in cat.name.lower() %}🎧
+                    {% elif 'câble' in cat.name.lower() %}🔗
+                    {% elif 'support' in cat.name.lower() %}📍
+                    {% elif 'protection' in cat.name.lower() or 'verre' in cat.name.lower() %}🛡️
+                    {% else %}📱
+                    {% endif %}
+                </div>
+                <h3>{{ cat.name }}</h3>
+                <small>{{ cat.product_count() }} produits</small>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if promo_products %}
+<section class="section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">Promotions</h2>
+            <a href="{{ url_for('shop.catalog', sort='newest') }}" class="section-link">Voir tout &rarr;</a>
+        </div>
+        <div class="products-grid">
+            {% for product in promo_products %}
+            {% include 'components/product_card.html' %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if featured %}
+<section class="section" id="featured">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">Produits Vedettes</h2>
+            <a href="{{ url_for('shop.catalog') }}" class="section-link">Voir tout &rarr;</a>
+        </div>
+        <div class="products-grid">
+            {% for product in featured %}
+            {% include 'components/product_card.html' %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if new_products %}
+<section class="section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">Nouveautés</h2>
+            <a href="{{ url_for('shop.catalog', sort='newest') }}" class="section-link">Voir tout &rarr;</a>
+        </div>
+        <div class="products-grid">
+            {% for product in new_products %}
+            {% include 'components/product_card.html' %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<section class="section cta-section">
+    <div class="container">
+        <div class="cta-box">
+            <h2>Vous cherchez un accessoire spécifique ?</h2>
+            <p>Contactez-nous sur Instagram ou WhatsApp et on vous guide !</p>
+            <div class="cta-actions">
+                <a href="https://instagram.com/fayzishopping" target="_blank" class="btn btn-primary">Instagram</a>
+                <a href="https://wa.me/213XXXXXXXXX" target="_blank" class="btn btn-outline-light">WhatsApp</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block admin_content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="stat-icon">&#128196;</span>
+        <div class="stat-info">
+            <h3>{{ total_orders }}</h3>
+            <p>Total commandes</p>
+        </div>
+    </div>
+    <div class="stat-card stat-warning">
+        <span class="stat-icon">&#9203;</span>
+        <div class="stat-info">
+            <h3>{{ pending_orders }}</h3>
+            <p>En attente</p>
+        </div>
+    </div>
+    <div class="stat-card stat-success">
+        <span class="stat-icon">&#128176;</span>
+        <div class="stat-info">
+            <h3>{{ "{:,}".format(total_revenue).replace(",", " ") }} DA</h3>
+            <p>Revenu total</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <span class="stat-icon">&#128230;</span>
+        <div class="stat-info">
+            <h3>{{ total_products }}</h3>
+            <p>Produits actifs</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <span class="stat-icon">&#128200;</span>
+        <div class="stat-info">
+            <h3>{{ orders_this_week }}</h3>
+            <p>Commandes (7j)</p>
+        </div>
+    </div>
+    <div class="stat-card stat-success">
+        <span class="stat-icon">&#128179;</span>
+        <div class="stat-info">
+            <h3>{{ "{:,}".format(revenue_this_week).replace(",", " ") }} DA</h3>
+            <p>Revenu (7j)</p>
+        </div>
+    </div>
+    {% if unread_messages is defined and unread_messages > 0 %}
+    <div class="stat-card stat-warning">
+        <span class="stat-icon">&#9993;</span>
+        <div class="stat-info">
+            <h3>{{ unread_messages }}</h3>
+            <p>Messages non lus</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<div class="admin-section">
+    <div class="admin-section-header">
+        <h3>Dernières commandes</h3>
+        <a href="{{ url_for('admin.orders_list') }}" class="btn btn-sm btn-outline">Voir tout</a>
+    </div>
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>N°</th>
+                <th>Client</th>
+                <th>Téléphone</th>
+                <th>Wilaya</th>
+                <th>Total</th>
+                <th>Statut</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in recent_orders %}
+            <tr class="clickable-row" onclick="window.location='{{ url_for('admin.order_detail', order_id=order.id) }}'">
+                <td><strong>{{ order.order_number }}</strong></td>
+                <td>{{ order.full_name }}</td>
+                <td>{{ order.phone }}</td>
+                <td>{{ order.wilaya }}</td>
+                <td>{{ "{:,}".format(order.total).replace(",", " ") }} DA</td>
+                <td><span class="status-badge status-{{ order.status }}">{{ order.status_label() }}</span></td>
+                <td>{{ order.created_at.strftime('%d/%m %H:%M') }}</td>
+            </tr>
+            {% endfor %}
+            {% if not recent_orders %}
+            <tr><td colspan="7" class="text-center">Aucune commande pour l'instant.</td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

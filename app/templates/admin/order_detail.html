@@ -1,0 +1,80 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Commande {{ order.order_number }}{% endblock %}
+{% block page_title %}Commande {{ order.order_number }}{% endblock %}
+
+{% block admin_content %}
+<div class="order-detail-grid">
+    <div class="order-info-card">
+        <h3>Informations client</h3>
+        <dl class="detail-list">
+            <dt>Nom</dt><dd>{{ order.full_name }}</dd>
+            <dt>Téléphone</dt><dd><a href="tel:{{ order.phone }}">{{ order.phone }}</a></dd>
+            {% if order.phone_secondary %}
+            <dt>Tél. secondaire</dt><dd><a href="tel:{{ order.phone_secondary }}">{{ order.phone_secondary }}</a></dd>
+            {% endif %}
+            <dt>Wilaya</dt><dd>{{ order.wilaya }}</dd>
+            <dt>Commune</dt><dd>{{ order.commune }}</dd>
+            <dt>Adresse</dt><dd>{{ order.address }}</dd>
+            {% if order.notes %}
+            <dt>Notes</dt><dd>{{ order.notes }}</dd>
+            {% endif %}
+        </dl>
+    </div>
+
+    <div class="order-info-card">
+        <h3>Détails commande</h3>
+        <dl class="detail-list">
+            <dt>Commande</dt><dd><strong>{{ order.order_number }}</strong></dd>
+            <dt>Date</dt><dd>{{ order.created_at.strftime('%d/%m/%Y à %H:%M') }}</dd>
+            <dt>Paiement</dt><dd>Paiement à la livraison (COD)</dd>
+            <dt>Sous-total</dt><dd>{{ "{:,}".format(order.subtotal).replace(",", " ") }} DA</dd>
+            <dt>Livraison</dt><dd>{{ "{:,}".format(order.shipping_cost).replace(",", " ") }} DA</dd>
+            <dt><strong>Total</strong></dt><dd><strong>{{ "{:,}".format(order.total).replace(",", " ") }} DA</strong></dd>
+        </dl>
+
+        <div class="status-update-form">
+            <h4>Mettre à jour le statut</h4>
+            <form method="POST" class="status-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <select name="status" class="form-control">
+                    {% for key, label in order.STATUSES.items() %}
+                    <option value="{{ key }}" {% if order.status == key %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary">Mettre à jour</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="admin-section">
+    <h3>Articles commandés</h3>
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Produit</th>
+                <th>Variante</th>
+                <th>Quantité</th>
+                <th>Prix unitaire</th>
+                <th>Sous-total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.items.all() %}
+            <tr>
+                <td>{{ item.product_name }}</td>
+                <td>{{ item.variant_name or '-' }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ "{:,}".format(item.unit_price).replace(",", " ") }} DA</td>
+                <td>{{ "{:,}".format(item.subtotal()).replace(",", " ") }} DA</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="form-actions">
+    <a href="{{ url_for('admin.orders_list') }}" class="btn btn-outline">&larr; Retour aux commandes</a>
+    <a href="https://wa.me/213{{ order.phone|replace(' ', '')|replace('-', '') }}" target="_blank" class="btn btn-success">Contacter sur WhatsApp</a>
+</div>
+{% endblock %}

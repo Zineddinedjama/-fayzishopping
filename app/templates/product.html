@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }}{% endblock %}
+{% block meta_description %}{{ product.description|truncate(160) }}{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div class="container">
+        <nav class="breadcrumb">
+            <a href="{{ url_for('main.index') }}">Accueil</a> /
+            <a href="{{ url_for('shop.catalog') }}">Boutique</a> /
+            <a href="{{ url_for('shop.catalog', category=product.category.slug) }}">{{ product.category.name }}</a> /
+            <span>{{ product.name }}</span>
+        </nav>
+    </div>
+</section>
+
+<section class="section product-page">
+    <div class="container">
+        <div class="product-detail">
+            <div class="product-gallery">
+                <div class="gallery-main">
+                    <img id="main-product-image" src="{{ all_images[0].url if all_images else 'https://via.placeholder.com/600x600?text=Fayzishopping' }}" alt="{{ product.name }}">
+                </div>
+                {% if all_images|length > 1 %}
+                <div class="gallery-thumbs">
+                    {% for img in all_images %}
+                    <button class="gallery-thumb {% if loop.first %}active{% endif %}" onclick="changeImage('{{ img.url }}', this)">
+                        <img src="{{ img.url }}" alt="{{ img.alt_text }}">
+                    </button>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="product-info">
+                <span class="product-category-label">{{ product.category.name }}</span>
+                <h1 class="product-title">{{ product.name }}</h1>
+
+                <div class="product-price-box">
+                    <span class="product-price">{{ "{:,}".format(product.price).replace(",", " ") }} DA</span>
+                    {% if product.compare_price and product.compare_price > product.price %}
+                    <span class="product-compare-price">{{ "{:,}".format(product.compare_price).replace(",", " ") }} DA</span>
+                    <span class="product-discount">-{{ ((1 - product.price / product.compare_price) * 100)|int }}%</span>
+                    {% endif %}
+                </div>
+
+                <div class="product-stock">
+                    {% if product.in_stock() %}
+                    <span class="in-stock">&#9989; En stock</span>
+                    {% else %}
+                    <span class="out-of-stock">&#10060; Rupture de stock</span>
+                    {% endif %}
+                </div>
+
+                {% if product.description %}
+                <div class="product-description">
+                    {{ product.description|safe }}
+                </div>
+                {% endif %}
+
+                {% if product.compatible_phones %}
+                <div class="product-meta">
+                    <strong>Compatibilité :</strong>
+                    <span>{{ product.compatible_phones }}</span>
+                </div>
+                {% endif %}
+
+                {% if product.has_variants() %}
+                <div class="product-variants">
+                    <div class="variant-group" id="variant-selectors">
+                        {% set phone_models = product.phone_models_list() %}
+                        {% if phone_models %}
+                        <label>Modèle de téléphone :</label>
+                        <select id="phone-model-select" onchange="updateVariantOptions()">
+                            <option value="">Sélectionnez un modèle</option>
+                            {% for model in phone_models %}
+                            <option value="{{ model }}">{{ model }}</option>
+                            {% endfor %}
+                        </select>
+                        {% endif %}
+
+                        {% set colors = [] %}
+                        {% for v in product.variants.all() %}
+                            {% if v.color and v.color not in colors %}
+                                {% if colors.append(v.color) %}{% endif %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if colors %}
+                        <label>Couleur :</label>
+                        <select id="color-select" onchange="updateVariantOptions()">
+                            <option value="">Sélectionnez une couleur</option>
+                            {% for color in colors %}
+                            <option value="{{ color }}">{{ color }}</option>
+                            {% endfor %}
+                        </select>
+                        {% endif %}
+
+                        <input type="hidden" id="selected-variant-id" value="">
+                        <input type="hidden" id="selected-variant-stock" value="">
+                    </div>
+                {% endif %}
+
+                <div class="product-add-section">
+                    <div class="quantity-control">
+                        <button class="qty-btn" onclick="changeQty(-1)">-</button>
+                        <input type="number" id="product-quantity" value="1" min="1" max="99" readonly>
+                        <button class="qty-btn" onclick="changeQty(1)">+</button>
+                    </div>
+                    <button class="btn btn-primary btn-lg btn-add-to-cart" id="add-to-cart-btn" onclick="addProductToCart()" {% if not product.in_stock() %}disabled{% endif %}>
+                        &#128722; Ajouter au panier
+                    </button>
+                </div>
+
+                <div class="product-guarantees">
+                    <div class="guarantee-item">&#128666; Livraison 24-72h</div>
+                    <div class="guarantee-item">&#128176; Paiement à la livraison</div>
+                    <div class="guarantee-item">&#128222; Support client disponible</div>
+                </div>
+
+                <div class="product-share">
+                    <span>Partager :</span>
+                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.url }}" target="_blank" class="share-btn share-facebook">Facebook</a>
+                    <a href="https://wa.me/?text={{ product.name }}%20{{ request.url }}" target="_blank" class="share-btn share-whatsapp">WhatsApp</a>
+                    <a href="https://twitter.com/intent/tweet?url={{ request.url }}&text={{ product.name }}" target="_blank" class="share-btn share-twitter">Twitter</a>
+                </div>
+            </div>
+        </div>
+
+        {% if related %}
+        <div class="related-products">
+            <h2 class="section-title">Produits similaires</h2>
+            <div class="products-grid">
+                {% for product in related %}
+                {% include 'components/product_card.html' %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<script>
+const VARIANTS = [
+    {% for v in product.variants.all() %}
+    {
+        id: {{ v.id }},
+        phone_model: "{{ v.phone_model or '' }}",
+        color: "{{ v.color or '' }}",
+        stock: {{ v.stock }},
+        price: {{ v.price or product.price }}
+    },
+    {% endfor %}
+];
+</script>
+{% endblock %}

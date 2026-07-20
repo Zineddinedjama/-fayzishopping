@@ -1,0 +1,56 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Commandes{% endblock %}
+{% block page_title %}Commandes{% endblock %}
+
+{% block admin_content %}
+<div class="admin-toolbar">
+    <form class="admin-search" method="GET" style="display:flex;gap:0.5rem;flex:1;">
+        <input type="text" name="q" value="{{ search }}" placeholder="N° commande, client, téléphone..." class="form-control" style="flex:1;">
+        <button type="submit" class="btn btn-sm btn-primary">Rechercher</button>
+        {% if search %}
+        <a href="{{ url_for('admin.orders_list') }}" class="btn btn-sm btn-outline">Effacer</a>
+        {% endif %}
+    </form>
+</div>
+
+<div class="filter-tabs" style="margin-bottom:1rem;">
+    <a href="{{ url_for('admin.orders_list') }}" class="tab {% if not current_status %}active{% endif %}">Toutes</a>
+    <a href="{{ url_for('admin.orders_list', status='pending') }}" class="tab {% if current_status == 'pending' %}active{% endif %}">En attente</a>
+    <a href="{{ url_for('admin.orders_list', status='confirmed') }}" class="tab {% if current_status == 'confirmed' %}active{% endif %}">Confirmées</a>
+    <a href="{{ url_for('admin.orders_list', status='shipped') }}" class="tab {% if current_status == 'shipped' %}active{% endif %}">Expédiées</a>
+    <a href="{{ url_for('admin.orders_list', status='delivered') }}" class="tab {% if current_status == 'delivered' %}active{% endif %}">Livrées</a>
+    <a href="{{ url_for('admin.orders_list', status='cancelled') }}" class="tab {% if current_status == 'cancelled' %}active{% endif %}">Annulées</a>
+</div>
+
+<table class="admin-table">
+    <thead>
+        <tr>
+            <th>N° Commande</th>
+            <th>Client</th>
+            <th>Téléphone</th>
+            <th>Wilaya</th>
+            <th>Total</th>
+            <th>Statut</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for order in orders %}
+        <tr class="clickable-row" onclick="window.location='{{ url_for('admin.order_detail', order_id=order.id) }}'">
+            <td><strong>{{ order.order_number }}</strong></td>
+            <td>{{ order.full_name }}</td>
+            <td>{{ order.phone }}</td>
+            <td>{{ order.wilaya }}</td>
+            <td>{{ "{:,}".format(order.total).replace(",", " ") }} DA</td>
+            <td><span class="status-badge status-{{ order.status }}">{{ order.status_label() }}</span></td>
+            <td>{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+        </tr>
+        {% endfor %}
+        {% if not orders %}
+        <tr><td colspan="7" class="text-center">Aucune commande{% if search %} trouvée pour "{{ search }}"{% endif %}.</td></tr>
+        {% endif %}
+    </tbody>
+</table>
+
+{% include 'components/pagination.html' %}
+{% endblock %}

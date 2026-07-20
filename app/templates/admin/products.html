@@ -1,0 +1,84 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Produits{% endblock %}
+{% block page_title %}Produits{% endblock %}
+
+{% block admin_content %}
+<div class="admin-toolbar">
+    <form class="admin-search" method="GET" style="display:flex;gap:0.5rem;flex:1;">
+        <input type="text" name="q" value="{{ search }}" placeholder="Rechercher un produit..." class="form-control" style="flex:1;">
+        <select name="category_id" class="form-control" style="width:auto;" onchange="this.form.submit()">
+            <option value="">Toutes catégories</option>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}" {% if current_category_id and current_category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-sm btn-primary">Rechercher</button>
+        {% if search or current_category_id %}
+        <a href="{{ url_for('admin.products_list') }}" class="btn btn-sm btn-outline">Effacer</a>
+        {% endif %}
+    </form>
+    <a href="{{ url_for('admin.product_new') }}" class="btn btn-primary">+ Nouveau produit</a>
+</div>
+
+<table class="admin-table">
+    <thead>
+        <tr>
+            <th>Image</th>
+            <th>Nom</th>
+            <th>Catégorie</th>
+            <th>Prix</th>
+            <th>Stock</th>
+            <th>Variantes</th>
+            <th>État</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for product in products %}
+        <tr>
+            <td>
+                <img src="{{ product.primary_image() or 'https://via.placeholder.com/50x50' }}" alt="" class="table-thumb">
+            </td>
+            <td><strong>{{ product.name }}</strong></td>
+            <td>{{ product.category.name }}</td>
+            <td>{{ "{:,}".format(product.price).replace(",", " ") }} DA</td>
+            <td class="{% if product.stock < 5 and not product.has_variants() %}text-danger{% endif %}">
+                {% if product.has_variants() %}
+                <span title="Stock géré par variantes">{{ product.variants.count() }} var.</span>
+                {% else %}
+                {{ product.stock }}
+                {% endif %}
+            </td>
+            <td>
+                {% if product.has_variants() %}
+                <small class="text-muted">
+                    {% for v in product.variants.limit(3).all() %}
+                    {{ v.display_name() }}{% if not loop.last %}, {% endif %}
+                    {% endfor %}{% if product.variants.count() > 3 %}...{% endif %}
+                </small>
+                {% else %}-{% endif %}
+            </td>
+            <td>
+                {% if product.is_active %}
+                <span class="status-badge status-confirmed">Actif</span>
+                {% else %}
+                <span class="status-badge status-cancelled">Inactif</span>
+                {% endif %}
+            </td>
+            <td class="actions-cell">
+                <a href="{{ url_for('shop.product_detail', slug=product.slug) }}" class="btn btn-sm btn-outline" target="_blank" title="Voir">&#128065;</a>
+                <a href="{{ url_for('admin.product_edit', product_id=product.id) }}" class="btn btn-sm btn-outline">Modifier</a>
+                <form method="POST" action="{{ url_for('admin.product_delete', product_id=product.id) }}" style="display:inline" onsubmit="return confirm('Supprimer ce produit ?')">
+                    <button type="submit" class="btn btn-sm btn-danger">Supprimer</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+        {% if not products %}
+        <tr><td colspan="8" class="text-center">Aucun produit trouvé.</td></tr>
+        {% endif %}
+    </tbody>
+</table>
+
+{% include 'components/pagination.html' %}
+{% endblock %}

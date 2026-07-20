@@ -1,0 +1,83 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Tarifs de livraison{% endblock %}
+{% block page_title %}Tarifs de livraison par wilaya{% endblock %}
+
+{% block admin_content %}
+<div class="admin-section">
+    <div class="admin-section-header">
+        <h3>Modifier tous les tarifs</h3>
+    </div>
+    <form method="POST" class="inline-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="update_all">
+        <div class="form-row" style="align-items:end;">
+            <div class="form-group">
+                <label>Nouveau tarif par défaut (DA)</label>
+                <input type="number" name="default_price" class="form-control" value="600" min="0">
+            </div>
+            <button type="submit" class="btn btn-warning" onclick="return confirm('Mettre à jour tous les tarifs ?')">
+                Appliquer à tous
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="admin-section">
+    <div class="admin-section-header">
+        <h3>Importer depuis un fichier CSV</h3>
+    </div>
+    <form method="POST" enctype="multipart/form-data" class="inline-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="import_excel">
+        <div class="form-row" style="align-items:end;">
+            <div class="form-group">
+                <label>Fichier CSV (code, nom, prix)</label>
+                <input type="file" name="shipping_file" class="form-control" accept=".csv,.txt">
+                <small>Format : code_wilaya,nom_wilaya,prix. Exemple : 16,Alger,500</small>
+            </div>
+            <button type="submit" class="btn btn-primary">Importer</button>
+        </div>
+    </form>
+</div>
+
+<div class="admin-section">
+    <div class="admin-section-header">
+        <h3>Tarifs actuels ({{ rates|length }} wilayas)</h3>
+    </div>
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Wilaya</th>
+                <th>Tarif (DA)</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rate in rates %}
+            <tr>
+                <td>{{ rate.wilaya_code }}</td>
+                <td>{{ rate.wilaya_name }}</td>
+                <td>
+                    <form method="POST" class="inline-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="update_one">
+                        <input type="hidden" name="wilaya_code" value="{{ rate.wilaya_code }}">
+                        <input type="hidden" name="wilaya_name" value="{{ rate.wilaya_name }}">
+                        <input type="number" name="price" value="{{ rate.price }}" class="form-control form-control-sm" min="0" style="width:90px;">
+                        <button type="submit" class="btn btn-sm btn-primary">OK</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+            {% if not rates %}
+            <tr>
+                <td colspan="4" class="text-center">
+                    Aucun tarif configuré. Importez un fichier CSV ou utilisez le seed.
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

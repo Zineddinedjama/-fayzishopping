@@ -1,0 +1,35 @@
+<article class="product-card" data-product-id="{{ product.id }}">
+    <a href="{{ url_for('shop.product_detail', slug=product.slug) }}" class="product-card-link">
+        <div class="product-card-image">
+            {% if product.compare_price and product.compare_price > product.price %}
+            <span class="badge badge-sale">-{{ ((1 - product.price / product.compare_price) * 100)|int }}%</span>
+            {% endif %}
+            {% if product.is_new %}
+            <span class="badge badge-new">Nouveau</span>
+            {% endif %}
+            <img src="{{ product.primary_image() or 'https://placehold.co/400x400/e2e8f0/1e293b?text=Fayzishopping' }}" alt="{{ product.name }}" loading="lazy">
+            <button class="btn-wishlist" onclick="event.preventDefault();event.stopPropagation();toggleWishlist({{ product.id }}, this)" title="Ajouter aux favoris">
+                <span class="heart-icon">&#9825;</span>
+            </button>
+        </div>
+        <div class="product-card-info">
+            <span class="product-card-category">{{ product.category.name }}</span>
+            <h3 class="product-card-name">{{ product.name }}</h3>
+            <div class="product-card-price">
+                <span class="price-current">{{ "{:,}".format(product.price).replace(",", " ") }} DA</span>
+                {% if product.compare_price and product.compare_price > product.price %}
+                <span class="price-compare">{{ "{:,}".format(product.compare_price).replace(",", " ") }} DA</span>
+                {% endif %}
+            </div>
+        </div>
+    </a>
+    <div class="product-card-actions">
+        {% if product.in_stock() %}
+        <button class="btn btn-add-cart btn-sm" onclick="addToCart({{ product.id }})" title="Ajouter au panier">
+            &#128722; Ajouter
+        </button>
+        {% else %}
+        <span class="out-of-stock-label">Rupture de stock</span>
+        {% endif %}
+    </div>
+</article>

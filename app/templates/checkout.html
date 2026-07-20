@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Commande{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div class="container">
+        <h1>Finaliser la commande</h1>
+        <nav class="breadcrumb">
+            <a href="{{ url_for('main.index') }}">Accueil</a> /
+            <a href="{{ url_for('cart.view_cart') }}">Panier</a> /
+            <span>Commande</span>
+        </nav>
+    </div>
+</section>
+
+<section class="section checkout-page">
+    <div class="container">
+        <form action="{{ url_for('checkout.confirm_order') }}" method="POST" class="checkout-form" id="checkout-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="checkout-layout">
+                <div class="checkout-form-section">
+                    <h2>Informations de livraison</h2>
+
+                    <div class="form-group">
+                        <label for="full_name">Nom complet *</label>
+                        <input type="text" id="full_name" name="full_name" required placeholder="Ex: Ahmed Ben Ali" class="form-control" value="{{ saved_name }}">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="phone">Téléphone principal *</label>
+                            <input type="tel" id="phone" name="phone" required placeholder="0555 12 34 56" class="form-control" pattern="[0-9\s\-\+]{8,}" value="{{ saved_phone }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="phone_secondary">Téléphone secondaire</label>
+                            <input type="tel" id="phone_secondary" name="phone_secondary" placeholder="0777 98 76 54" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="wilaya">Wilaya *</label>
+                            <select id="wilaya" name="wilaya" required class="form-control" onchange="updateShippingCost()">
+                                <option value="">Sélectionnez votre wilaya</option>
+                                {% for code, name, price in wilayas %}
+                                <option value="{{ name }}" data-price="{{ price }}">{{ name }} - {{ "{:,}".format(price).replace(",", " ") }} DA</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="commune">Commune *</label>
+                            <input type="text" id="commune" name="commune" required placeholder="Votre commune" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="address">Adresse de livraison *</label>
+                        <textarea id="address" name="address" required placeholder="Rue, numéro, quartier, repère..." class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notes">Notes (optionnel)</label>
+                        <textarea id="notes" name="notes" placeholder="Instructions spéciales pour la livraison..." class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+
+                <div class="checkout-summary">
+                    <div class="cart-summary-box">
+                        <h3>Votre commande</h3>
+                        {% for item in cart.items.all() %}
+                        <div class="checkout-item">
+                            <div class="checkout-item-info">
+                                <span class="checkout-item-name">{{ item.product.name }}</span>
+                                {% if item.variant %}
+                                <small class="checkout-item-variant">{{ item.variant.display_name() }}</small>
+                                {% endif %}
+                                <span class="checkout-item-qty">x{{ item.quantity }}</span>
+                            </div>
+                            <span class="checkout-item-price">{{ "{:,}".format(item.subtotal()).replace(",", " ") }} DA</span>
+                        </div>
+                        {% endfor %}
+
+                        <hr>
+                        <div class="summary-line">
+                            <span>Sous-total</span>
+                            <span>{{ "{:,}".format(subtotal).replace(",", " ") }} DA</span>
+                        </div>
+                        <div class="summary-line">
+                            <span>Livraison</span>
+                            <span id="shipping-cost-display">Choisissez une wilaya</span>
+                        </div>
+                        <hr>
+                        <div class="summary-line summary-total">
+                            <span>Total à payer</span>
+                            <span id="total-display">{{ "{:,}".format(subtotal).replace(",", " ") }} DA</span>
+                        </div>
+
+                        <div class="payment-info">
+                            <span class="payment-icon">&#128176;</span>
+                            <div>
+                                <strong>Paiement à la livraison (COD)</strong>
+                                <small>Payez en cash à la réception de votre colis</small>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg btn-block">
+                            Confirmer la commande
+                        </button>
+                        <p class="checkout-terms">
+                            En passant cette commande, vous acceptez nos conditions de vente.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
+
+<script>
+const SUBTOTAL = {{ subtotal }};
+const WILAYA_SHIPPING = {
+    {% for code, name, price in wilayas %}
+    "{{ name }}": {{ price }},
+    {% endfor %}
+};
+
+function updateShippingCost() {
+    const wilaya = document.getElementById('wilaya').value;
+    const cost = WILAYA_SHIPPING[wilaya] || 0;
+    const total = SUBTOTAL + cost;
+    document.getElementById('shipping-cost-display').textContent = cost > 0 ? cost.toLocaleString('fr-FR') + ' DA' : 'Gratuite';
+    document.getElementById('total-display').textContent = total.toLocaleString('fr-FR') + ' DA';
+}
+</script>
+{% endblock %}

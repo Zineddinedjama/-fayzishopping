@@ -1,0 +1,195 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{{ 'Modifier' if product else 'Nouveau' }} produit{% endblock %}
+{% block page_title %}{{ 'Modifier' if product else 'Nouveau' }} produit{% endblock %}
+
+{% block admin_content %}
+<form method="POST" enctype="multipart/form-data" class="admin-form" id="product-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-grid">
+        <div class="form-section">
+            <h3>Informations générales</h3>
+            <div class="form-group">
+                <label for="name">Nom du produit *</label>
+                <input type="text" id="name" name="name" value="{{ product.name if product else '' }}" required class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" class="form-control" rows="5">{{ product.description if product else '' }}</textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="category_id">Catégorie *</label>
+                    <select id="category_id" name="category_id" required class="form-control">
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if product and product.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="sku">SKU</label>
+                    <input type="text" id="sku" name="sku" value="{{ product.sku if product else '' }}" class="form-control">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="compatible_phones">Compatibilité téléphones</label>
+                <input type="text" id="compatible_phones" name="compatible_phones" value="{{ product.compatible_phones if product else '' }}" class="form-control" placeholder="Ex: iPhone 14, Samsung S23, Xiaomi 13">
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Prix et stock</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="price">Prix (DA) *</label>
+                    <input type="number" id="price" name="price" value="{{ product.price if product else '' }}" required class="form-control" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="compare_price">Ancien prix (DA)</label>
+                    <input type="number" id="compare_price" name="compare_price" value="{{ product.compare_price if product else '' }}" class="form-control" min="0">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="stock">Stock (global)</label>
+                <input type="number" id="stock" name="stock" value="{{ product.stock if product else '0' }}" class="form-control" min="0">
+            </div>
+
+            <h3 style="margin-top:1.5rem;">Options</h3>
+            <div class="form-check">
+                <input type="checkbox" id="is_active" name="is_active" {% if not product or product.is_active %}checked{% endif %}>
+                <label for="is_active">Actif (visible en boutique)</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" id="is_featured" name="is_featured" {% if product and product.is_featured %}checked{% endif %}>
+                <label for="is_featured">Produit vedette</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" id="is_new" name="is_new" {% if not product or product.is_new %}checked{% endif %}>
+                <label for="is_new">Nouveau produit</label>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Images</h3>
+            {% if product and product.images.count() > 0 %}
+            <div class="current-images">
+                {% for img in product.images.all() %}
+                <div class="current-image-thumb">
+                    <img src="{{ img.url }}" alt="">
+                    <form method="POST" action="{{ url_for('admin.delete_image', product_id=product.id, image_id=img.id) }}" style="display:inline">
+                        <button type="submit" class="btn-remove-img" title="Supprimer">&times;</button>
+                    </form>
+                    {% if img.is_primary %}<span class="primary-badge">Principale</span>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <div class="form-group">
+                <label for="images">Ajouter des images</label>
+                <input type="file" id="images" name="images" class="form-control" multiple accept="image/*">
+                <small>Vous pouvez sélectionner plusieurs images. La première sera l'image principale.</small>
+            </div>
+        </div>
+
+        <div class="form-section" style="grid-column: 1 / -1;">
+            <h3>Variantes (modèle / couleur / stock / prix)</h3>
+            <div class="variants-header">
+                <small>Ajoutez des variantes si le produit a plusieurs modèles de téléphone ou couleurs. Laissez vide si non applicable.</small>
+            </div>
+            <div id="variants-container">
+                {% if product and product.variants.count() > 0 %}
+                    {% for v in product.variants.all() %}
+                    <div class="variant-row">
+                        <input type="hidden" name="variant_id[]" value="{{ v.id }}">
+                        <div class="form-group">
+                            <label>Modèle</label>
+                            <input type="text" name="variant_phone[]" value="{{ v.phone_model }}" class="form-control form-control-sm" placeholder="Ex: iPhone 15 Pro">
+                        </div>
+                        <div class="form-group">
+                            <label>Couleur</label>
+                            <input type="text" name="variant_color[]" value="{{ v.color }}" class="form-control form-control-sm" placeholder="Ex: Noir">
+                        </div>
+                        <div class="form-group">
+                            <label>Stock</label>
+                            <input type="number" name="variant_stock[]" value="{{ v.stock }}" class="form-control form-control-sm" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Prix (DA)</label>
+                            <input type="number" name="variant_price[]" value="{{ v.price or '' }}" class="form-control form-control-sm" min="0" placeholder="vide = prix global">
+                        </div>
+                        <div class="form-group">
+                            <label>SKU</label>
+                            <input type="text" name="variant_sku[]" value="{{ v.sku }}" class="form-control form-control-sm">
+                        </div>
+                        <div class="form-group" style="align-self:flex-end;">
+                            <button type="button" class="btn btn-sm btn-danger remove-variant" onclick="removeVariantRow(this)">&times;</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <button type="button" class="btn btn-sm btn-outline" onclick="addVariantRow()" style="margin-top:0.5rem;">
+                + Ajouter une variante
+            </button>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary btn-lg">
+            {{ 'Enregistrer les modifications' if product else 'Créer le produit' }}
+        </button>
+        <a href="{{ url_for('admin.products_list') }}" class="btn btn-outline btn-lg">Annuler</a>
+    </div>
+</form>
+
+<script>
+function addVariantRow() {
+    const container = document.getElementById('variants-container');
+    const html = `
+        <div class="variant-row">
+            <input type="hidden" name="variant_id[]" value="">
+            <div class="form-group">
+                <label>Modèle</label>
+                <input type="text" name="variant_phone[]" class="form-control form-control-sm" placeholder="Ex: iPhone 15 Pro">
+            </div>
+            <div class="form-group">
+                <label>Couleur</label>
+                <input type="text" name="variant_color[]" class="form-control form-control-sm" placeholder="Ex: Noir">
+            </div>
+            <div class="form-group">
+                <label>Stock</label>
+                <input type="number" name="variant_stock[]" class="form-control form-control-sm" min="0" value="0">
+            </div>
+            <div class="form-group">
+                <label>Prix (DA)</label>
+                <input type="number" name="variant_price[]" class="form-control form-control-sm" min="0" placeholder="vide = prix global">
+            </div>
+            <div class="form-group">
+                <label>SKU</label>
+                <input type="text" name="variant_sku[]" class="form-control form-control-sm">
+            </div>
+            <div class="form-group" style="align-self:flex-end;">
+                <button type="button" class="btn btn-sm btn-danger remove-variant" onclick="removeVariantRow(this)">&times;</button>
+            </div>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', html);
+}
+
+function removeVariantRow(btn) {
+    const row = btn.closest('.variant-row');
+    if (row) {
+        row.style.opacity = '0.3';
+        const deleteInput = document.createElement('input');
+        deleteInput.type = 'hidden';
+        deleteInput.name = 'variant_delete[]';
+        const idInput = row.querySelector('input[name="variant_id[]"]');
+        if (idInput && idInput.value) {
+            deleteInput.value = idInput.value;
+            row.parentElement.appendChild(deleteInput);
+        }
+        row.remove();
+    }
+}
+</script>
+{% endblock %}

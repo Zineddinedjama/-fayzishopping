@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Suivi de commande{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div class="container">
+        <h1>Suivi de commande</h1>
+        <nav class="breadcrumb">
+            <a href="{{ url_for('main.index') }}">Accueil</a> / <span>Suivi</span>
+        </nav>
+    </div>
+</section>
+
+<section class="section static-page">
+    <div class="container container-narrow">
+        <div class="track-form-box">
+            <h2>Trouvez votre commande</h2>
+            <p>Entrez votre numéro de téléphone utilisé lors de la commande.</p>
+            <form method="GET" class="track-form">
+                <div class="track-form-row">
+                    <input type="tel" name="phone" value="{{ search_phone }}" placeholder="Ex: 0555123456" class="form-control" required>
+                    <button type="submit" class="btn btn-primary">Rechercher</button>
+                </div>
+            </form>
+        </div>
+
+        {% if search_phone %}
+        <div class="track-results">
+            {% if orders %}
+            <h3>{{ orders|length }} commande{{ 's' if orders|length > 1 }} trouvée{{ 's' if orders|length > 1 }}</h3>
+            {% for order in orders %}
+            <div class="track-order-card">
+                <div class="track-order-header">
+                    <div>
+                        <strong>{{ order.order_number }}</strong>
+                        <span class="status-badge status-{{ order.status }}">{{ order.status_label() }}</span>
+                    </div>
+                    <span class="track-date">{{ order.created_at.strftime('%d/%m/%Y à %H:%M') }}</span>
+                </div>
+
+                <div class="track-timeline">
+                    {% set steps = ['pending', 'confirmed', 'shipped', 'delivered'] %}
+                    {% set step_labels = {'pending': 'En attente', 'confirmed': 'Confirmée', 'shipped': 'Expédiée', 'delivered': 'Livrée'} %}
+                    {% set current_idx = steps.index(order.status) if order.status in steps else -1 %}
+                    {% if order.status == 'cancelled' %}
+                    <div class="timeline-cancelled">Commande annulée</div>
+                    {% else %}
+                    {% for step in steps %}
+                    <div class="timeline-step {% if loop.index0 <= current_idx %}completed{% endif %} {% if loop.index0 == current_idx %}active{% endif %}">
+                        <div class="timeline-dot"></div>
+                        <span>{{ step_labels[step] }}</span>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+
+                <div class="track-order-details">
+                    <div class="track-detail">
+                        <span>Livraison :</span>
+                        <span>{{ order.commune }}, {{ order.wilaya }}</span>
+                    </div>
+                    <div class="track-detail">
+                        <span>Total :</span>
+                        <strong>{{ "{:,}".format(order.total).replace(",", " ") }} DA</strong>
+                    </div>
+                    <div class="track-detail">
+                        <span>Paiement :</span>
+                        <span>À la livraison</span>
+                    </div>
+                </div>
+
+                <div class="track-order-items">
+                    {% for item in order.items.all() %}
+                    <div class="track-item">
+                        <span>{{ item.product_name }} {% if item.variant_name %}({{ item.variant_name }}){% endif %} x{{ item.quantity }}</span>
+                        <span>{{ "{:,}".format(item.subtotal()).replace(",", " ") }} DA</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state">
+                <span class="empty-icon">&#128269;</span>
+                <h3>Aucune commande trouvée</h3>
+                <p>Aucune commande n'est associée à ce numéro. Vérifiez le numéro ou <a href="{{ url_for('main.contact') }}">contactez-nous</a>.</p>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

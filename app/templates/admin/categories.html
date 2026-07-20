@@ -1,0 +1,60 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Catégories{% endblock %}
+{% block page_title %}Catégories{% endblock %}
+
+{% block admin_content %}
+<div class="admin-section">
+    <div class="admin-section-header">
+        <h3>Ajouter une catégorie</h3>
+    </div>
+    <form method="POST" class="admin-form-inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-row">
+            <div class="form-group">
+                <input type="text" name="name" placeholder="Nom de la catégorie" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <input type="text" name="description" placeholder="Description (optionnel)" class="form-control">
+            </div>
+            <button type="submit" class="btn btn-primary">Créer</button>
+        </div>
+    </form>
+</div>
+
+<div class="admin-section" style="margin-top:2rem;">
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Slug</th>
+                <th>Produits</th>
+                <th>État</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cat in categories %}
+            <tr>
+                <td>{{ cat.name }}</td>
+                <td>{{ cat.slug }}</td>
+                <td>{{ cat.product_count() }}</td>
+                <td>
+                    {% if cat.is_active %}
+                    <span class="status-badge status-confirmed">Actif</span>
+                    {% else %}
+                    <span class="status-badge status-cancelled">Inactif</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <form method="POST" action="{{ url_for('admin.category_toggle', cat_id=cat.id) }}" style="display:inline">
+                        <button type="submit" class="btn btn-sm btn-outline">
+                            {{ 'Désactiver' if cat.is_active else 'Activer' }}
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
