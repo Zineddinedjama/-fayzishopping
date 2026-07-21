@@ -7,6 +7,7 @@ load_dotenv()
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-me")
     _db_url = os.getenv("DATABASE_URL", "sqlite:///fayzishopping.db")
+    # Some providers (Heroku, etc.) use postgres:// but SQLAlchemy requires postgresql://
     if _db_url.startswith("postgres://"):
         _db_url = _db_url.replace("postgres://", "postgresql://", 1)
     SQLALCHEMY_DATABASE_URI = _db_url

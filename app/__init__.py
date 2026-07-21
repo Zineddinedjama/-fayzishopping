@@ -31,8 +31,11 @@ def create_app(config_class=Config):
 
     @app.context_processor
     def inject_globals():
-        from app.models import Category
-        categories = Category.query.filter_by(is_active=True).order_by(Category.name).all()
+        try:
+            from app.models import Category
+            categories = Category.query.filter_by(is_active=True).order_by(Category.name).all()
+        except Exception:
+            categories = []
         return dict(categories=categories, meta_pixel_id=app.config["META_PIXEL_ID"])
 
     return app
