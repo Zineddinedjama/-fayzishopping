@@ -128,6 +128,7 @@ def product_new():
             db.session.flush()
 
             files = request.files.getlist("images")
+            uploaded = 0
             for i, f in enumerate(files):
                 if f and f.filename:
                     url = upload_image(f)
@@ -137,10 +138,17 @@ def product_new():
                             is_primary=(i == 0), order=i,
                         )
                         db.session.add(img)
+                        uploaded += 1
+                    else:
+                        logger.error("Image upload failed for %s", f.filename)
+                        flash(f"Erreur upload image : {f.filename}", "danger")
 
             _save_variants(product, request)
             db.session.commit()
-            flash("Produit créé avec succès.", "success")
+            if uploaded:
+                flash("Produit créé avec succès.", "success")
+            else:
+                flash("Produit créé (aucune image uploadée — vérifiez la config Cloudinary).", "warning")
             return redirect(url_for("admin.products_list"))
         except Exception as e:
             db.session.rollback()
@@ -172,6 +180,7 @@ def product_edit(product_id):
             product.compatible_phones = request.form.get("compatible_phones", "")
 
             files = request.files.getlist("images")
+            uploaded = 0
             for i, f in enumerate(files):
                 if f and f.filename:
                     url = upload_image(f)
@@ -182,10 +191,17 @@ def product_edit(product_id):
                             order=product.images.count() + i,
                         )
                         db.session.add(img)
+                        uploaded += 1
+                    else:
+                        logger.error("Image upload failed for %s", f.filename)
+                        flash(f"Erreur upload image : {f.filename}", "danger")
 
             _save_variants(product, request)
             db.session.commit()
-            flash("Produit mis à jour.", "success")
+            if uploaded:
+                flash("Produit mis à jour.", "success")
+            else:
+                flash("Produit mis à jour (aucune image uploadée — vérifiez la config Cloudinary).", "warning")
             return redirect(url_for("admin.products_list"))
         except Exception as e:
             db.session.rollback()

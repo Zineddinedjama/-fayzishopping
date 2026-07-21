@@ -1,3 +1,5 @@
+import logging
+
 try:
     import cloudinary
     import cloudinary.uploader
@@ -7,14 +9,24 @@ except ImportError:
 
 from flask import current_app
 
+logger = logging.getLogger(__name__)
+
 
 def configure_cloudinary():
     if not CLOUDINARY_AVAILABLE:
+        logger.error("cloudinary SDK not installed")
         return False
+
+    cloud_url = current_app.config.get("CLOUDINARY_URL", "")
+    if cloud_url:
+        cloudinary.config(cloudinary_url=cloud_url, secure=True)
+        return True
+
     cloud_name = current_app.config.get("CLOUDINARY_CLOUD_NAME", "")
     api_key = current_app.config.get("CLOUDINARY_API_KEY", "")
     api_secret = current_app.config.get("CLOUDINARY_API_SECRET", "")
     if not cloud_name or not api_key or not api_secret:
+        logger.error("Cloudinary config missing: CLOUDINARY_URL or CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET required")
         return False
     cloudinary.config(
         cloud_name=cloud_name,
@@ -27,10 +39,13 @@ def configure_cloudinary():
 
 def upload_image(file, folder="fayzishopping/products"):
     if not file or not file.filename:
+        logger.warning("upload_image called with empty file")
         return None
     if not configure_cloudinary():
+        logger.error("upload_image aborted: Cloudinary not configured")
         return None
     try:
+        logger.info("Uploading %s to Cloudinary folder=%s", file.filename, folder)
         result = cloudinary.uploader.upload(
             file,
             folder=folder,
@@ -40,8 +55,11 @@ def upload_image(file, folder="fayzishopping/products"):
                 {"fetch_format": "auto"},
             ],
         )
-        return result.get("secure_url")
-    except Exception:
+        url = result.get("secure_url")
+        logger.info("Upload OK: %s -> %s", file.filename, url)
+        return url
+    except Exception as e:
+        logger.exception("Cloudinary upload failed for %s: %s", file.filename, e)
         return None
 
 
