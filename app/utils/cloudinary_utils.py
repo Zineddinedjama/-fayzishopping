@@ -11,10 +11,15 @@ from flask import current_app
 def configure_cloudinary():
     if not CLOUDINARY_AVAILABLE:
         return False
+    cloud_name = current_app.config.get("CLOUDINARY_CLOUD_NAME", "")
+    api_key = current_app.config.get("CLOUDINARY_API_KEY", "")
+    api_secret = current_app.config.get("CLOUDINARY_API_SECRET", "")
+    if not cloud_name or not api_key or not api_secret:
+        return False
     cloudinary.config(
-        cloud_name=current_app.config.get("CLOUDINARY_CLOUD_NAME", ""),
-        api_key=current_app.config.get("CLOUDINARY_API_KEY", ""),
-        api_secret=current_app.config.get("CLOUDINARY_API_SECRET", ""),
+        cloud_name=cloud_name,
+        api_key=api_key,
+        api_secret=api_secret,
         secure=True,
     )
     return True
@@ -24,14 +29,7 @@ def upload_image(file, folder="fayzishopping/products"):
     if not file or not file.filename:
         return None
     if not configure_cloudinary():
-        from werkzeug.utils import secure_filename
-        import os
-        upload_dir = os.path.join(current_app.static_folder, "uploads")
-        os.makedirs(upload_dir, exist_ok=True)
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(upload_dir, filename)
-        file.save(filepath)
-        return f"/static/uploads/{filename}"
+        return None
     try:
         result = cloudinary.uploader.upload(
             file,
