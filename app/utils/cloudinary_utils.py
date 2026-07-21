@@ -1,4 +1,5 @@
 import logging
+import os
 
 try:
     import cloudinary
@@ -7,34 +8,42 @@ try:
 except ImportError:
     CLOUDINARY_AVAILABLE = False
 
-from flask import current_app
-
 logger = logging.getLogger(__name__)
 
 
 def configure_cloudinary():
     if not CLOUDINARY_AVAILABLE:
-        logger.error("cloudinary SDK not installed")
+        logger.error("cloudinary SDK not installed — run: pip install cloudinary")
         return False
 
-    cloud_url = current_app.config.get("CLOUDINARY_URL", "")
+    cloud_url = os.environ.get("CLOUDINARY_URL", "")
+    cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME", "")
+    api_key = os.environ.get("CLOUDINARY_API_KEY", "")
+    api_secret = os.environ.get("CLOUDINARY_API_SECRET", "")
+
+    logger.debug("Cloudinary env: CLOUDINARY_URL=%s CLOUDINARY_CLOUD_NAME=%s CLOUDINARY_API_KEY=%s CLOUDINARY_API_SECRET=%s",
+                 "SET" if cloud_url else "EMPTY",
+                 "SET" if cloud_name else "EMPTY",
+                 "SET" if api_key else "EMPTY",
+                 "SET" if api_secret else "EMPTY")
+
     if cloud_url:
         cloudinary.config(cloudinary_url=cloud_url, secure=True)
+        logger.info("Cloudinary configured via CLOUDINARY_URL")
         return True
 
-    cloud_name = current_app.config.get("CLOUDINARY_CLOUD_NAME", "")
-    api_key = current_app.config.get("CLOUDINARY_API_KEY", "")
-    api_secret = current_app.config.get("CLOUDINARY_API_SECRET", "")
-    if not cloud_name or not api_key or not api_secret:
-        logger.error("Cloudinary config missing: CLOUDINARY_URL or CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET required")
-        return False
-    cloudinary.config(
-        cloud_name=cloud_name,
-        api_key=api_key,
-        api_secret=api_secret,
-        secure=True,
-    )
-    return True
+    if cloud_name and api_key and api_secret:
+        cloudinary.config(
+            cloud_name=cloud_name,
+            api_key=api_key,
+            api_secret=api_secret,
+            secure=True,
+        )
+        logger.info("Cloudinary configured via individual env vars")
+        return True
+
+    logger.error("Cloudinary config missing — set CLOUDINARY_URL or CLOUDINARY_CLOUD_NAME+API_KEY+API_SECRET in Vercel env vars")
+    return False
 
 
 def upload_image(file, folder="fayzishopping/products"):

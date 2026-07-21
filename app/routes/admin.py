@@ -201,7 +201,10 @@ def product_edit(product_id):
             if uploaded:
                 flash("Produit mis à jour.", "success")
             else:
-                flash("Produit mis à jour (aucune image uploadée — vérifiez la config Cloudinary).", "warning")
+                import os
+                has_url = bool(os.environ.get("CLOUDINARY_URL", ""))
+                has_name = bool(os.environ.get("CLOUDINARY_CLOUD_NAME", ""))
+                flash(f"Produit mis à jour (images non uploadées). CLOUDINARY_URL={'ok' if has_url else 'MANQUANT'}, CLOUDINARY_CLOUD_NAME={'ok' if has_name else 'MANQUANT'}. Vérifiez les env vars Vercel.", "warning")
             return redirect(url_for("admin.products_list"))
         except Exception as e:
             db.session.rollback()
