@@ -49,15 +49,45 @@ def configure_cloudinary():
 def upload_image(file, folder="fayzishopping/products"):
     if not file or not file.filename:
         logger.warning("upload_image called with empty file")
-        return None
+        return None, "Fichier vide"
+
     if not configure_cloudinary():
-        logger.error("upload_image aborted: Cloudinary not configured")
-        return None
+        return None, "Cloudinary non configuré — vérifie les env vars Vercel"
+
     try:
-        logger.info("Uploading %s to Cloudinary folder=%s", file.filename, folder)
+        file.seek(0, 2)
+        size_mb = file.tell() / (1024 * 1024)
+        file.seek(0)
+        logger.info("Uploading %s (%.1f MB) to Cloudinary folder=%s", file.filename, size_mb, folder)
+
+        if size_mb > 10:
+            return None, f"Fichier trop volumineux ({size_mb:.1f} MB, max 10 MB)"
+
+        if size_mb > 4:
+            try:
+                from PIL import Image
+                import io
+                img = Image.open(file)
+                img.thumbnail((800, 800), Image.LANCZOS)
+                buf = io.BytesIO()
+                fmt = 'JPEG' if img.mode in ('RGB', 'RGBA') else 'PNG'
+                if img.mode == 'RGBA':
+                    img = img.convert('RGB')
+                    fmt = 'JPEG'
+                img.save(buf, format=fmt, quality=85, optimize=True)
+                buf.seek(0)
+                file = buf
+                logger.info("Image resized to %.1f MB for upload", buf.getbuffer().nbytes / (1024 * 1024))
+            except Exception as resize_err:
+                logger.warning("Resize failed, uploading original: %s", resize_err)
+
+        import re
+        safe_name = re.sub(r'[^\w\-_\. ]', '_', file.filename)
+
         result = cloudinary.uploader.upload(
             file,
             folder=folder,
+            public_id=safe_name.rsplit('.', 1)[0] if '.' in safe_name else safe_name,
             transformation=[
                 {"width": 800, "height": 800, "crop": "limit"},
                 {"quality": "auto"},
@@ -66,10 +96,11 @@ def upload_image(file, folder="fayzishopping/products"):
         )
         url = result.get("secure_url")
         logger.info("Upload OK: %s -> %s", file.filename, url)
-        return url
+        return url, None
     except Exception as e:
-        logger.exception("Cloudinary upload failed for %s: %s", file.filename, e)
-        return None
+        error_msg = f"{type(e).__name__}: {e}"
+        logger.exception("Cloudinary upload failed for %s: %s", file.filename, error_msg)
+        return None, error_msg
 
 
 def delete_image(public_id):

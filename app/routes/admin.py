@@ -131,7 +131,7 @@ def product_new():
             uploaded = 0
             for i, f in enumerate(files):
                 if f and f.filename:
-                    url = upload_image(f)
+                    url, err = upload_image(f)
                     if url:
                         img = ProductImage(
                             product_id=product.id, url=url, alt_text=product.name,
@@ -140,15 +140,15 @@ def product_new():
                         db.session.add(img)
                         uploaded += 1
                     else:
-                        logger.error("Image upload failed for %s", f.filename)
-                        flash(f"Erreur upload image : {f.filename}", "danger")
+                        logger.error("Image upload failed for %s: %s", f.filename, err)
+                        flash(f"Erreur upload '{f.filename}' : {err}", "danger")
 
             _save_variants(product, request)
             db.session.commit()
             if uploaded:
                 flash("Produit créé avec succès.", "success")
             else:
-                flash("Produit créé (aucune image uploadée — vérifiez la config Cloudinary).", "warning")
+                flash("Produit créé (images non uploadées).", "warning")
             return redirect(url_for("admin.products_list"))
         except Exception as e:
             db.session.rollback()
@@ -183,7 +183,7 @@ def product_edit(product_id):
             uploaded = 0
             for i, f in enumerate(files):
                 if f and f.filename:
-                    url = upload_image(f)
+                    url, err = upload_image(f)
                     if url:
                         img = ProductImage(
                             product_id=product.id, url=url, alt_text=product.name,
@@ -193,18 +193,15 @@ def product_edit(product_id):
                         db.session.add(img)
                         uploaded += 1
                     else:
-                        logger.error("Image upload failed for %s", f.filename)
-                        flash(f"Erreur upload image : {f.filename}", "danger")
+                        logger.error("Image upload failed for %s: %s", f.filename, err)
+                        flash(f"Erreur upload '{f.filename}' : {err}", "danger")
 
             _save_variants(product, request)
             db.session.commit()
             if uploaded:
                 flash("Produit mis à jour.", "success")
             else:
-                import os
-                has_url = bool(os.environ.get("CLOUDINARY_URL", ""))
-                has_name = bool(os.environ.get("CLOUDINARY_CLOUD_NAME", ""))
-                flash(f"Produit mis à jour (images non uploadées). CLOUDINARY_URL={'ok' if has_url else 'MANQUANT'}, CLOUDINARY_CLOUD_NAME={'ok' if has_name else 'MANQUANT'}. Vérifiez les env vars Vercel.", "warning")
+                flash("Produit mis à jour (images non uploadées).", "warning")
             return redirect(url_for("admin.products_list"))
         except Exception as e:
             db.session.rollback()
