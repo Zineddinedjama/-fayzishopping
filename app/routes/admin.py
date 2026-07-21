@@ -6,7 +6,7 @@ from app.models import (
     Admin, Product, ProductImage, ProductVariant, Category,
     Order, ShippingRate, SiteSettings, ContactMessage,
 )
-from app.utils.cloudinary_utils import upload_image
+from app.utils.cloudinary_utils import upload_image, delete_image as cloudinary_delete, get_public_id_from_url
 from app.utils.helpers import slugify
 
 logger = logging.getLogger(__name__)
@@ -155,6 +155,7 @@ def product_new():
 @admin_required
 def product_edit(product_id):
     product = Product.query.get_or_404(product_id)
+    logger.debug("product_edit %s %s", product_id, request.method)
     if request.method == "POST":
         try:
             product.name = request.form["name"]
@@ -247,9 +248,21 @@ def product_delete(product_id):
 @admin_bp.route("/products/<int:product_id>/images/<int:image_id>/delete", methods=["POST"])
 @admin_required
 def delete_image(product_id, image_id):
+    logger.debug("delete_image product=%s image=%s", product_id, image_id)
     img = ProductImage.query.filter_by(id=image_id, product_id=product_id).first_or_404()
+    if img.url:
+        public_id = get_public_id_from_url(img.url)
+        if public_id:
+            try:
+                cloudinary_delete(public_id)
+                logger.debug("Cloudinary delete OK: %s", public_id)
+            except Exception:
+                logger.exception("Cloudinary delete failed for %s", public_id)
     db.session.delete(img)
     db.session.commit()
+    logger.debug("Image %s deleted from DB", image_id)
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify({"success": True})
     flash("Image supprimée.", "success")
     return redirect(url_for("admin.product_edit", product_id=product_id))
 

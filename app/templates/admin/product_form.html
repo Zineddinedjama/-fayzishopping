@@ -74,11 +74,9 @@
             {% if product and product.images.count() > 0 %}
             <div class="current-images">
                 {% for img in product.images.all() %}
-                <div class="current-image-thumb">
+                <div class="current-image-thumb" id="img-thumb-{{ img.id }}">
                     <img src="{{ img.url }}" alt="">
-                    <form method="POST" action="{{ url_for('admin.delete_image', product_id=product.id, image_id=img.id) }}" style="display:inline">
-                        <button type="submit" class="btn-remove-img" title="Supprimer">&times;</button>
-                    </form>
+                    <button type="button" class="btn-remove-img" title="Supprimer" onclick="deleteImage({{ product.id }}, {{ img.id }})">&times;</button>
                     {% if img.is_primary %}<span class="primary-badge">Principale</span>{% endif %}
                 </div>
                 {% endfor %}
@@ -143,6 +141,28 @@
 </form>
 
 <script>
+function deleteImage(productId, imageId) {
+    if (!confirm('Supprimer cette image ?')) return;
+    var thumb = document.getElementById('img-thumb-' + imageId);
+    if (thumb) thumb.style.opacity = '0.3';
+    fetch('/admin/products/' + productId + '/images/' + imageId + '/delete', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function(r) {
+        if (r.ok || r.redirected) {
+            if (thumb) thumb.remove();
+        } else {
+            if (thumb) thumb.style.opacity = '1';
+            alert('Erreur lors de la suppression.');
+        }
+    })
+    .catch(function() {
+        if (thumb) thumb.style.opacity = '1';
+        alert('Erreur réseau.');
+    });
+}
+
 function addVariantRow() {
     const container = document.getElementById('variants-container');
     const html = `
