@@ -89,7 +89,7 @@ class Product(db.Model):
 
     def in_stock(self):
         if self.has_variants():
-            return any(v.stock > 0 for v in self.variants.all())
+            return self.stock > 0 or any(v.stock > 0 for v in self.variants.all())
         return self.stock > 0
 
     def phone_models_list(self):
