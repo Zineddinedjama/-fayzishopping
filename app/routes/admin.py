@@ -1,3 +1,4 @@
+import logging
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from app.extensions import db
@@ -7,6 +8,8 @@ from app.models import (
 )
 from app.utils.cloudinary_utils import upload_image
 from app.utils.helpers import slugify
+
+logger = logging.getLogger(__name__)
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -106,38 +109,43 @@ def products_list():
 @admin_required
 def product_new():
     if request.method == "POST":
-        product = Product(
-            name=request.form["name"],
-            slug=slugify(request.form["name"]),
-            description=request.form.get("description", ""),
-            price=int(request.form["price"]),
-            compare_price=int(request.form.get("compare_price", 0) or 0),
-            stock=int(request.form.get("stock", 0) or 0),
-            sku=request.form.get("sku", ""),
-            category_id=int(request.form["category_id"]),
-            is_active="is_active" in request.form,
-            is_featured="is_featured" in request.form,
-            is_new="is_new" in request.form,
-            compatible_phones=request.form.get("compatible_phones", ""),
-        )
-        db.session.add(product)
-        db.session.flush()
+        try:
+            product = Product(
+                name=request.form["name"],
+                slug=slugify(request.form["name"]),
+                description=request.form.get("description", ""),
+                price=int(request.form["price"]),
+                compare_price=int(request.form.get("compare_price", 0) or 0),
+                stock=int(request.form.get("stock", 0) or 0),
+                sku=request.form.get("sku", ""),
+                category_id=int(request.form["category_id"]),
+                is_active="is_active" in request.form,
+                is_featured="is_featured" in request.form,
+                is_new="is_new" in request.form,
+                compatible_phones=request.form.get("compatible_phones", ""),
+            )
+            db.session.add(product)
+            db.session.flush()
 
-        files = request.files.getlist("images")
-        for i, f in enumerate(files):
-            if f and f.filename:
-                url = upload_image(f)
-                if url:
-                    img = ProductImage(
-                        product_id=product.id, url=url, alt_text=product.name,
-                        is_primary=(i == 0), order=i,
-                    )
-                    db.session.add(img)
+            files = request.files.getlist("images")
+            for i, f in enumerate(files):
+                if f and f.filename:
+                    url = upload_image(f)
+                    if url:
+                        img = ProductImage(
+                            product_id=product.id, url=url, alt_text=product.name,
+                            is_primary=(i == 0), order=i,
+                        )
+                        db.session.add(img)
 
-        _save_variants(product, request)
-        db.session.commit()
-        flash("Produit créé avec succès.", "success")
-        return redirect(url_for("admin.products_list"))
+            _save_variants(product, request)
+            db.session.commit()
+            flash("Produit créé avec succès.", "success")
+            return redirect(url_for("admin.products_list"))
+        except Exception as e:
+            db.session.rollback()
+            logger.exception("Error creating product")
+            flash(f"Erreur lors de la création : {str(e)}", "danger")
 
     categories = Category.query.filter_by(is_active=True).order_by(Category.name).all()
     return render_template("admin/product_form.html", product=None, categories=categories)
@@ -148,35 +156,40 @@ def product_new():
 def product_edit(product_id):
     product = Product.query.get_or_404(product_id)
     if request.method == "POST":
-        product.name = request.form["name"]
-        product.slug = slugify(request.form["name"])
-        product.description = request.form.get("description", "")
-        product.price = int(request.form["price"])
-        product.compare_price = int(request.form.get("compare_price", 0) or 0)
-        product.stock = int(request.form.get("stock", 0) or 0)
-        product.sku = request.form.get("sku", "")
-        product.category_id = int(request.form["category_id"])
-        product.is_active = "is_active" in request.form
-        product.is_featured = "is_featured" in request.form
-        product.is_new = "is_new" in request.form
-        product.compatible_phones = request.form.get("compatible_phones", "")
+        try:
+            product.name = request.form["name"]
+            product.slug = slugify(request.form["name"])
+            product.description = request.form.get("description", "")
+            product.price = int(request.form["price"])
+            product.compare_price = int(request.form.get("compare_price", 0) or 0)
+            product.stock = int(request.form.get("stock", 0) or 0)
+            product.sku = request.form.get("sku", "")
+            product.category_id = int(request.form["category_id"])
+            product.is_active = "is_active" in request.form
+            product.is_featured = "is_featured" in request.form
+            product.is_new = "is_new" in request.form
+            product.compatible_phones = request.form.get("compatible_phones", "")
 
-        files = request.files.getlist("images")
-        for i, f in enumerate(files):
-            if f and f.filename:
-                url = upload_image(f)
-                if url:
-                    img = ProductImage(
-                        product_id=product.id, url=url, alt_text=product.name,
-                        is_primary=(i == 0 and product.images.count() == 0),
-                        order=product.images.count() + i,
-                    )
-                    db.session.add(img)
+            files = request.files.getlist("images")
+            for i, f in enumerate(files):
+                if f and f.filename:
+                    url = upload_image(f)
+                    if url:
+                        img = ProductImage(
+                            product_id=product.id, url=url, alt_text=product.name,
+                            is_primary=(i == 0 and product.images.count() == 0),
+                            order=product.images.count() + i,
+                        )
+                        db.session.add(img)
 
-        _save_variants(product, request)
-        db.session.commit()
-        flash("Produit mis à jour.", "success")
-        return redirect(url_for("admin.products_list"))
+            _save_variants(product, request)
+            db.session.commit()
+            flash("Produit mis à jour.", "success")
+            return redirect(url_for("admin.products_list"))
+        except Exception as e:
+            db.session.rollback()
+            logger.exception("Error updating product")
+            flash(f"Erreur lors de la mise à jour : {str(e)}", "danger")
 
     categories = Category.query.filter_by(is_active=True).order_by(Category.name).all()
     return render_template("admin/product_form.html", product=product, categories=categories)
