@@ -331,18 +331,23 @@ def shipping_list():
         elif action == "update_one":
             wilaya_code = request.form.get("wilaya_code")
             price = int(request.form.get("price", 600))
+            home_price = request.form.get("home_delivery_price")
+            home_price = int(home_price) if home_price else None
             rate = ShippingRate.query.filter_by(wilaya_code=wilaya_code).first()
             if rate:
                 rate.price = price
+                if home_price is not None:
+                    rate.home_delivery_price = home_price
             else:
                 wilaya_name = request.form.get("wilaya_name", "")
-                rate = ShippingRate(wilaya_code=wilaya_code, wilaya_name=wilaya_name, price=price)
+                rate = ShippingRate(wilaya_code=wilaya_code, wilaya_name=wilaya_name, price=price, home_delivery_price=home_price)
                 db.session.add(rate)
             db.session.commit()
             flash("Tarif mis à jour.", "success")
         elif action == "update_all":
             default_price = int(request.form.get("default_price", 600))
-            ShippingRate.query.update({ShippingRate.price: default_price})
+            default_home = int(request.form.get("default_home_price", default_price + 150))
+            ShippingRate.query.update({ShippingRate.price: default_price, ShippingRate.home_delivery_price: default_home})
             db.session.commit()
             flash(f"Tous les tarifs mis à {default_price} DA.", "success")
         return redirect(url_for("admin.shipping_list"))
@@ -364,12 +369,15 @@ def _import_shipping_excel(file):
             if len(row) < 3:
                 continue
             code, name, price = row[0].strip(), row[1].strip(), int(row[2].strip())
+            home_price = int(row[3].strip()) if len(row) > 3 and row[3].strip() else None
             existing = ShippingRate.query.filter_by(wilaya_code=code).first()
             if existing:
                 existing.price = price
                 existing.wilaya_name = name
+                if home_price is not None:
+                    existing.home_delivery_price = home_price
             else:
-                db.session.add(ShippingRate(wilaya_code=code, wilaya_name=name, price=price))
+                db.session.add(ShippingRate(wilaya_code=code, wilaya_name=name, price=price, home_delivery_price=home_price))
             count += 1
         db.session.commit()
     except Exception as e:

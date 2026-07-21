@@ -25,7 +25,7 @@
                         <span>{{ "{:,}".format(order.subtotal).replace(",", " ") }} DA</span>
                     </div>
                     <div class="summary-line">
-                        <span>Livraison</span>
+                        <span>Livraison ({{ 'Domicile' if order.delivery_type == 'domicile' else 'Bureau' }})</span>
                         <span>{{ "{:,}".format(order.shipping_cost).replace(",", " ") }} DA</span>
                     </div>
                     <div class="summary-line summary-total">

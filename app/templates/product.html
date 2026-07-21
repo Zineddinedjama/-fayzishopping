@@ -37,7 +37,7 @@
                 <h1 class="product-title">{{ product.name }}</h1>
 
                 <div class="product-price-box">
-                    <span class="product-price">{{ "{:,}".format(product.price).replace(",", " ") }} DA</span>
+                    <span class="product-price" id="unit-price" data-base="{{ product.price }}">{{ "{:,}".format(product.price).replace(",", " ") }} DA</span>
                     {% if product.compare_price and product.compare_price > product.price %}
                     <span class="product-compare-price">{{ "{:,}".format(product.compare_price).replace(",", " ") }} DA</span>
                     <span class="product-discount">-{{ ((1 - product.price / product.compare_price) * 100)|int }}%</span>
@@ -46,9 +46,9 @@
 
                 <div class="product-stock">
                     {% if product.in_stock() %}
-                    <span class="in-stock">&#9989; En stock</span>
+                    <span class="in-stock" id="stock-status">&#9989; En stock</span>
                     {% else %}
-                    <span class="out-of-stock">&#10060; Rupture de stock</span>
+                    <span class="out-of-stock" id="stock-status">&#10060; Rupture de stock</span>
                     {% endif %}
                 </div>
 
@@ -100,13 +100,65 @@
                     </div>
                 {% endif %}
 
-                <div class="product-add-section">
+                <div class="product-quantity-section">
+                    <label class="section-label">Quantité :</label>
                     <div class="quantity-control">
                         <button class="qty-btn" onclick="changeQty(-1)">-</button>
-                        <input type="number" id="product-quantity" value="1" min="1" max="99" readonly>
+                        <input type="number" id="product-quantity" value="1" min="1" max="{{ product.stock }}" readonly>
                         <button class="qty-btn" onclick="changeQty(1)">+</button>
                     </div>
-                    <button class="btn btn-primary btn-lg btn-add-to-cart" id="add-to-cart-btn" onclick="addProductToCart()" {% if not product.in_stock() %}disabled{% endif %}>
+                </div>
+
+                <div class="product-shipping-section">
+                    <label class="section-label">Wilaya de livraison :</label>
+                    <select id="wilaya-select" class="form-control" onchange="updateShipping()">
+                        <option value="">Sélectionnez votre wilaya</option>
+                        {% for code, name in wilayas %}
+                        <option value="{{ name }}">{{ name }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label class="section-label">Type de livraison :</label>
+                    <div class="delivery-options">
+                        <label class="delivery-option">
+                            <input type="radio" name="delivery_type" value="bureau" checked onchange="updateShipping()">
+                            <span class="delivery-radio"></span>
+                            <span class="delivery-info">
+                                <span class="delivery-name">Point relais (Bureau)</span>
+                                <span class="delivery-price" id="bureau-price">--</span>
+                            </span>
+                        </label>
+                        <label class="delivery-option">
+                            <input type="radio" name="delivery_type" value="domicile" onchange="updateShipping()">
+                            <span class="delivery-radio"></span>
+                            <span class="delivery-info">
+                                <span class="delivery-name">Livraison à domicile</span>
+                                <span class="delivery-price" id="domicile-price">--</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="product-total-section">
+                    <div class="total-line">
+                        <span>Prix produit</span>
+                        <span id="subtotal-display">{{ "{:,}".format(product.price).replace(",", " ") }} DA</span>
+                    </div>
+                    <div class="total-line">
+                        <span>Livraison</span>
+                        <span id="shipping-display">Choisissez une wilaya</span>
+                    </div>
+                    <div class="total-line total-final">
+                        <span>Total</span>
+                        <span id="total-display">{{ "{:,}".format(product.price).replace(",", " ") }} DA</span>
+                    </div>
+                </div>
+
+                <div class="product-actions">
+                    <button class="btn btn-primary btn-lg btn-commander" id="btn-commander" onclick="commander()" {% if not product.in_stock() %}disabled{% endif %}>
+                        Commander
+                    </button>
+                    <button class="btn btn-outline btn-lg btn-add-to-cart" id="add-to-cart-btn" onclick="addProductToCart()" {% if not product.in_stock() %}disabled{% endif %}>
                         &#128722; Ajouter au panier
                     </button>
                 </div>
@@ -140,6 +192,9 @@
 </section>
 
 <script>
+const PRODUCT_ID = {{ product.id }};
+const PRODUCT_PRICE = {{ product.price }};
+const PRODUCT_STOCK = {{ product.stock }};
 const VARIANTS = [
     {% for v in product.variants.all() %}
     {
@@ -151,5 +206,157 @@ const VARIANTS = [
     },
     {% endfor %}
 ];
+let SHIPPING_RATES = {};
+let currentShippingCost = 0;
+
+fetch('/api/shipping/all')
+    .then(r => r.json())
+    .then(data => { SHIPPING_RATES = data; })
+    .catch(() => {});
+
+function getUnitPrice() {
+    const hiddenStock = document.getElementById('selected-variant-stock');
+    if (hiddenStock && hiddenStock.value) {
+        const variant = VARIANTS.find(v => v.id == document.getElementById('selected-variant-id').value);
+        if (variant && variant.price) return variant.price;
+    }
+    return PRODUCT_PRICE;
+}
+
+function getAvailableStock() {
+    const hiddenStock = document.getElementById('selected-variant-stock');
+    if (hiddenStock && hiddenStock.value !== '') return parseInt(hiddenStock.value);
+    return PRODUCT_STOCK;
+}
+
+function changeQty(delta) {
+    const input = document.getElementById('product-quantity');
+    if (!input) return;
+    const max = getAvailableStock();
+    let val = parseInt(input.value) + delta;
+    if (val < 1) val = 1;
+    if (val > max) val = max;
+    input.value = val;
+    updateTotal();
+}
+
+function updateShipping() {
+    const wilaya = document.getElementById('wilaya-select').value;
+    const deliveryType = document.querySelector('input[name="delivery_type"]:checked').value;
+
+    const bureauPriceEl = document.getElementById('bureau-price');
+    const domicilePriceEl = document.getElementById('domicile-price');
+
+    if (wilaya && SHIPPING_RATES[wilaya]) {
+        const rates = SHIPPING_RATES[wilaya];
+        bureauPriceEl.textContent = rates.bureau.toLocaleString('fr-FR') + ' DA';
+        domicilePriceEl.textContent = rates.domicile.toLocaleString('fr-FR') + ' DA';
+        currentShippingCost = deliveryType === 'domicile' ? rates.domicile : rates.bureau;
+    } else {
+        bureauPriceEl.textContent = '--';
+        domicilePriceEl.textContent = '--';
+        currentShippingCost = 0;
+    }
+    updateTotal();
+}
+
+function updateTotal() {
+    const qty = parseInt(document.getElementById('product-quantity').value) || 1;
+    const unitPrice = getUnitPrice();
+    const subtotal = unitPrice * qty;
+    const total = subtotal + currentShippingCost;
+
+    document.getElementById('subtotal-display').textContent = subtotal.toLocaleString('fr-FR') + ' DA';
+    document.getElementById('shipping-display').textContent = currentShippingCost > 0 ? currentShippingCost.toLocaleString('fr-FR') + ' DA' : 'Gratuite';
+    document.getElementById('total-display').textContent = total.toLocaleString('fr-FR') + ' DA';
+}
+
+function updateVariantOptions() {
+    if (typeof VARIANTS === 'undefined') return;
+
+    const phoneSelect = document.getElementById('phone-model-select');
+    const colorSelect = document.getElementById('color-select');
+    const hiddenId = document.getElementById('selected-variant-id');
+    const hiddenStock = document.getElementById('selected-variant-stock');
+    const addBtn = document.getElementById('add-to-cart-btn');
+    const commanderBtn = document.getElementById('btn-commander');
+
+    const phone = phoneSelect ? phoneSelect.value : '';
+    const color = colorSelect ? colorSelect.value : '';
+
+    let match = VARIANTS.find(v => {
+        let ok = true;
+        if (phone) ok = ok && v.phone_model === phone;
+        if (color) ok = ok && v.color === color;
+        return ok;
+    });
+
+    if (match) {
+        hiddenId.value = match.id;
+        hiddenStock.value = match.stock;
+        const inStock = match.stock > 0;
+        if (addBtn) addBtn.disabled = !inStock;
+        if (commanderBtn) commanderBtn.disabled = !inStock;
+
+        const priceEl = document.getElementById('unit-price');
+        if (priceEl && match.price) {
+            priceEl.textContent = match.price.toLocaleString('fr-FR') + ' DA';
+            priceEl.dataset.base = match.price;
+        }
+
+        const qtyInput = document.getElementById('product-quantity');
+        if (qtyInput) {
+            qtyInput.max = match.stock;
+            if (parseInt(qtyInput.value) > match.stock) qtyInput.value = match.stock || 1;
+        }
+
+        const stockEl = document.getElementById('stock-status');
+        if (stockEl) {
+            if (inStock) {
+                stockEl.className = 'in-stock';
+                stockEl.innerHTML = '&#9989; En stock (' + match.stock + ')';
+            } else {
+                stockEl.className = 'out-of-stock';
+                stockEl.innerHTML = '&#10060; Rupture de stock';
+            }
+        }
+    } else {
+        hiddenId.value = '';
+        hiddenStock.value = '';
+    }
+    updateTotal();
+}
+
+function commander() {
+    const btn = document.getElementById('btn-commander');
+    if (!btn || btn.disabled) return;
+    const variantId = document.getElementById('selected-variant-id')?.value || null;
+    const quantity = parseInt(document.getElementById('product-quantity')?.value || 1);
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+    btn.disabled = true;
+    btn.textContent = 'Ajout...';
+
+    fetch('/api/cart/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+        body: JSON.stringify({ product_id: PRODUCT_ID, variant_id: variantId ? parseInt(variantId) : null, quantity: quantity }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = '/cart';
+        } else {
+            showToast(data.error || 'Erreur', 'error');
+            btn.disabled = false;
+            btn.textContent = 'Commander';
+        }
+    })
+    .catch(() => {
+        showToast('Erreur de connexion', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Commander';
+    });
+}
 </script>
 {% endblock %}

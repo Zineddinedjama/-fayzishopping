@@ -115,6 +115,7 @@ function changeQty(delta) {
     if (val < 1) val = 1;
     if (val > 99) val = 99;
     input.value = val;
+    if (typeof updateTotal === 'function') updateTotal();
 }
 
 /* ---- Product Page: Variant Selection ---- */
@@ -157,7 +158,8 @@ function addProductToCart() {
     const btn = document.getElementById('add-to-cart-btn');
     if (!btn) return;
 
-    const productId = parseInt(btn.getAttribute('onclick')?.match(/\d+/)?.[0] || document.querySelector('[data-product-id]')?.dataset?.productId);
+    const productId = (typeof PRODUCT_ID !== 'undefined') ? PRODUCT_ID :
+        parseInt(btn.getAttribute('onclick')?.match(/\d+/)?.[0] || document.querySelector('[data-product-id]')?.dataset?.productId);
     const variantId = document.getElementById('selected-variant-id')?.value || null;
     const quantity = parseInt(document.getElementById('product-quantity')?.value || 1);
 

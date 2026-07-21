@@ -3,6 +3,21 @@ from app.config import Config
 from app.extensions import db, migrate, login_manager, csrf
 
 
+def _auto_migrate(app):
+    with app.app_context():
+        from sqlalchemy import inspect, text
+        try:
+            inspector = inspect(db.engine)
+            columns = [c["name"] for c in inspector.get_columns("orders")]
+            if "delivery_type" not in columns:
+                db.session.execute(text("ALTER TABLE orders ADD COLUMN delivery_type VARCHAR(20) DEFAULT 'bureau'"))
+                db.session.commit()
+                print("[migrate] Added orders.delivery_type column")
+        except Exception as e:
+            db.session.rollback()
+            print(f"[migrate] Skipped: {e}")
+
+
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
@@ -11,6 +26,8 @@ def create_app(config_class=Config):
     migrate.init_app(app, db)
     login_manager.init_app(app)
     csrf.init_app(app)
+
+    _auto_migrate(app)
 
     login_manager.login_view = "admin.login"
     login_manager.login_message_category = "info"

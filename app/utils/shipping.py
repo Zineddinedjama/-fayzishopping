@@ -8,6 +8,16 @@ def get_shipping_cost(wilaya_name):
     return 600
 
 
+def get_shipping_rates(wilaya_name):
+    rate = ShippingRate.query.filter_by(wilaya_name=wilaya_name, is_active=True).first()
+    if rate:
+        return {
+            "bureau": rate.price,
+            "domicile": rate.home_delivery_price or (rate.price + 150),
+        }
+    return {"bureau": 600, "domicile": 750}
+
+
 def get_all_wilayas():
     rates = ShippingRate.query.filter_by(is_active=True).order_by(ShippingRate.wilaya_code).all()
     return [(r.wilaya_name, r.wilaya_name, r.price) for r in rates]

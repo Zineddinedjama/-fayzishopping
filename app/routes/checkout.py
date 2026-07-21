@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from app.extensions import db
 from app.models import Cart, CartItem, Order, OrderItem, Product, ProductVariant, ShippingRate
 from app.utils.helpers import generate_order_number
-from app.utils.shipping import ALGERIAN_WILAYAS, get_shipping_cost
+from app.utils.shipping import ALGERIAN_WILAYAS, get_shipping_cost, get_shipping_rates
 
 checkout_bp = Blueprint("checkout", __name__)
 
@@ -69,7 +69,9 @@ def confirm_order():
     session["checkout_phone"] = phone
     session["checkout_wilaya"] = wilaya
 
-    shipping_cost = get_shipping_cost(wilaya)
+    delivery_type = request.form.get("delivery_type", "bureau").strip()
+    rates = get_shipping_rates(wilaya)
+    shipping_cost = rates.get(delivery_type, rates["bureau"])
     subtotal = cart.total()
     total = subtotal + shipping_cost
 
@@ -84,6 +86,7 @@ def confirm_order():
         notes=notes,
         subtotal=subtotal,
         shipping_cost=shipping_cost,
+        delivery_type=delivery_type,
         total=total,
         status="pending",
         payment_method="cod",
@@ -144,3 +147,24 @@ def shipping_cost():
         return jsonify({"cost": 0})
     cost = get_shipping_cost(wilaya)
     return jsonify({"cost": cost})
+
+
+@checkout_bp.route("/api/shipping/rates")
+def shipping_rates():
+    wilaya = request.args.get("wilaya", "")
+    if not wilaya:
+        return jsonify({"bureau": 0, "domicile": 0})
+    rates = get_shipping_rates(wilaya)
+    return jsonify(rates)
+
+
+@checkout_bp.route("/api/shipping/all")
+def all_shipping_rates():
+    rates = ShippingRate.query.filter_by(is_active=True).order_by(ShippingRate.wilaya_code).all()
+    result = {}
+    for r in rates:
+        result[r.wilaya_name] = {
+            "bureau": r.price,
+            "domicile": r.home_delivery_price or (r.price + 150),
+        }
+    return jsonify(result)

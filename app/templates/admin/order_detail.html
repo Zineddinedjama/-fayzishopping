@@ -28,7 +28,7 @@
             <dt>Date</dt><dd>{{ order.created_at.strftime('%d/%m/%Y à %H:%M') }}</dd>
             <dt>Paiement</dt><dd>Paiement à la livraison (COD)</dd>
             <dt>Sous-total</dt><dd>{{ "{:,}".format(order.subtotal).replace(",", " ") }} DA</dd>
-            <dt>Livraison</dt><dd>{{ "{:,}".format(order.shipping_cost).replace(",", " ") }} DA</dd>
+            <dt>Livraison</dt><dd>{{ "{:,}".format(order.shipping_cost).replace(",", " ") }} DA ({{ 'Domicile' if order.delivery_type == 'domicile' else 'Bureau' }})</dd>
             <dt><strong>Total</strong></dt><dd><strong>{{ "{:,}".format(order.total).replace(",", " ") }} DA</strong></dd>
         </dl>
 

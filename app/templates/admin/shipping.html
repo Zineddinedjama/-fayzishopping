@@ -12,8 +12,12 @@
         <input type="hidden" name="action" value="update_all">
         <div class="form-row" style="align-items:end;">
             <div class="form-group">
-                <label>Nouveau tarif par défaut (DA)</label>
+                <label>Tarif bureau par défaut (DA)</label>
                 <input type="number" name="default_price" class="form-control" value="600" min="0">
+            </div>
+            <div class="form-group">
+                <label>Tarif domicile par défaut (DA)</label>
+                <input type="number" name="default_home_price" class="form-control" value="750" min="0">
             </div>
             <button type="submit" class="btn btn-warning" onclick="return confirm('Mettre à jour tous les tarifs ?')">
                 Appliquer à tous
@@ -31,9 +35,9 @@
         <input type="hidden" name="action" value="import_excel">
         <div class="form-row" style="align-items:end;">
             <div class="form-group">
-                <label>Fichier CSV (code, nom, prix)</label>
+                <label>Fichier CSV (code, nom, prix_bureau, prix_domicile)</label>
                 <input type="file" name="shipping_file" class="form-control" accept=".csv,.txt">
-                <small>Format : code_wilaya,nom_wilaya,prix. Exemple : 16,Alger,500</small>
+                <small>Format : code_wilaya,nom_wilaya,prix_bureau,prix_domicile. Exemple : 16,Alger,400,550</small>
             </div>
             <button type="submit" class="btn btn-primary">Importer</button>
         </div>
@@ -49,7 +53,8 @@
             <tr>
                 <th>Code</th>
                 <th>Wilaya</th>
-                <th>Tarif (DA)</th>
+                <th>Bureau (DA)</th>
+                <th>Domicile (DA)</th>
                 <th>Action</th>
             </tr>
         </thead>
@@ -59,12 +64,15 @@
                 <td>{{ rate.wilaya_code }}</td>
                 <td>{{ rate.wilaya_name }}</td>
                 <td>
-                    <form method="POST" class="inline-form">
+                    <form method="POST" class="inline-form" style="display:flex;gap:4px;align-items:center;">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="action" value="update_one">
                         <input type="hidden" name="wilaya_code" value="{{ rate.wilaya_code }}">
                         <input type="hidden" name="wilaya_name" value="{{ rate.wilaya_name }}">
-                        <input type="number" name="price" value="{{ rate.price }}" class="form-control form-control-sm" min="0" style="width:90px;">
+                        <input type="number" name="price" value="{{ rate.price }}" class="form-control form-control-sm" min="0" style="width:80px;">
+                </td>
+                <td>
+                        <input type="number" name="home_delivery_price" value="{{ rate.home_delivery_price or (rate.price + 150) }}" class="form-control form-control-sm" min="0" style="width:80px;">
                         <button type="submit" class="btn btn-sm btn-primary">OK</button>
                     </form>
                 </td>
@@ -72,7 +80,7 @@
             {% endfor %}
             {% if not rates %}
             <tr>
-                <td colspan="4" class="text-center">
+                <td colspan="5" class="text-center">
                     Aucun tarif configuré. Importez un fichier CSV ou utilisez le seed.
                 </td>
             </tr>

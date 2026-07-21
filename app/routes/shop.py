@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, abort, current_app
 from app.models import Product, Category
 from app.utils.helpers import slugify
+from app.utils.shipping import ALGERIAN_WILAYAS
 
 shop_bp = Blueprint("shop", __name__)
 
@@ -89,4 +90,5 @@ def product_detail(slug):
         related=related,
         all_images=all_images,
         phone_models=phone_models,
+        wilayas=ALGERIAN_WILAYAS,
     )

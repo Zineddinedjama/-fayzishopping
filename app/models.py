@@ -177,6 +177,7 @@ class Order(db.Model):
     notes = db.Column(db.Text, default="")
     subtotal = db.Column(db.Integer, default=0)
     shipping_cost = db.Column(db.Integer, default=0)
+    delivery_type = db.Column(db.String(20), default="bureau")
     total = db.Column(db.Integer, default=0)
     status = db.Column(db.String(20), default="pending")
     payment_method = db.Column(db.String(20), default="cod")

@@ -341,7 +341,7 @@ def seed():
                     price = 700
                 else:
                     price = 800
-                db.session.add(ShippingRate(wilaya_code=code, wilaya_name=name, price=price))
+                db.session.add(ShippingRate(wilaya_code=code, wilaya_name=name, price=price, home_delivery_price=price + 150))
         db.session.commit()
         print("[+] 58 wilayas shipping rates seeded")
 
