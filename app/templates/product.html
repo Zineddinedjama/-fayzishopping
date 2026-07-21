@@ -19,13 +19,13 @@
         <div class="product-detail">
             <div class="product-gallery">
                 <div class="gallery-main">
-                    <img id="main-product-image" src="{{ all_images[0].url if all_images else 'https://via.placeholder.com/600x600?text=Fayzishopping' }}" alt="{{ product.name }}">
+                    <img id="main-product-image" src="{{ all_images[0].url if all_images else '' }}" alt="{{ product.name }}" onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22600%22 height=%22600%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23e2e8f0%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%2394a3b8%22 font-size=%2220%22 font-family=%22sans-serif%22%3EFayzishopping%3C/text%3E%3C/svg%3E';">
                 </div>
                 {% if all_images|length > 1 %}
                 <div class="gallery-thumbs">
                     {% for img in all_images %}
                     <button class="gallery-thumb {% if loop.first %}active{% endif %}" onclick="changeImage('{{ img.url }}', this)">
-                        <img src="{{ img.url }}" alt="{{ img.alt_text }}">
+                        <img src="{{ img.url }}" alt="{{ img.alt_text }}" onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23e2e8f0%22/%3E%3C/svg%3E';">
                     </button>
                     {% endfor %}
                 </div>

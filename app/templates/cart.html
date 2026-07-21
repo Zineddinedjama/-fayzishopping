@@ -20,7 +20,7 @@
                 <div class="cart-item" data-item-id="{{ item.id }}">
                     <div class="cart-item-image">
                         <a href="{{ url_for('shop.product_detail', slug=item.product.slug) }}">
-                            <img src="{{ item.product.primary_image() or 'https://via.placeholder.com/100x100?text=FZ' }}" alt="{{ item.product.name }}">
+                            <img src="{{ item.product.primary_image() }}" alt="{{ item.product.name }}" onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23e2e8f0%22/%3E%3C/svg%3E';">
                         </a>
                     </div>
                     <div class="cart-item-info">

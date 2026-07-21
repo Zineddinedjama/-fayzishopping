@@ -213,7 +213,7 @@ if (searchInput) {
                     }
                     dropdown.innerHTML = results.map(p => `
                         <a href="${p.url}" style="display:flex;align-items:center;gap:0.8rem;padding:0.6rem 1rem;text-decoration:none;color:#1e293b;border-bottom:1px solid #f1f5f9;">
-                            <img src="${p.image || 'https://via.placeholder.com/40x40'}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;">
+                            <img src="${p.image || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23e2e8f0%22/%3E%3C/svg%3E'}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;">
                             <div><div style="font-size:0.88rem;font-weight:600;">${p.name}</div><div style="font-size:0.8rem;color:#64748b;">${p.price.toLocaleString('fr-FR')} DA</div></div>
                         </a>
                     `).join('');

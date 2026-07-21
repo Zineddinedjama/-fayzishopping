@@ -37,7 +37,7 @@
         {% for product in products %}
         <tr>
             <td>
-                <img src="{{ product.primary_image() or 'https://via.placeholder.com/50x50' }}" alt="" class="table-thumb">
+                <img src="{{ product.primary_image() }}" alt="" class="table-thumb" onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2250%22 height=%2250%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23e2e8f0%22/%3E%3C/svg%3E';">
             </td>
             <td><strong>{{ product.name }}</strong></td>
             <td>{{ product.category.name }}</td>

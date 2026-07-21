@@ -308,9 +308,11 @@ def seed():
             db.session.flush()
 
             placeholder_text = pdata["name"][:25].replace(" ", "+")
+            import urllib.parse
+            svg_label = urllib.parse.quote(pdata["name"][:30])
             img = ProductImage(
                 product_id=product.id,
-                url=f"https://placehold.co/800x800/e2e8f0/1e293b?text={placeholder_text}",
+                url=f"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='800'%3E%3Crect width='100%25' height='100%25' fill='%23e2e8f0'/%3E%3Ctext x='50%25' y='45%25' dominant-baseline='middle' text-anchor='middle' fill='%2364748b' font-size='22' font-family='sans-serif'%3E{svg_label}%3C/text%3E%3Ctext x='50%25' y='58%25' dominant-baseline='middle' text-anchor='middle' fill='%2394a3b8' font-size='14' font-family='sans-serif'%3EFayzishopping%3C/text%3E%3C/svg%3E",
                 alt_text=product.name,
                 is_primary=True, order=0,
             )
