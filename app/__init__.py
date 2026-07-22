@@ -29,6 +29,19 @@ def _auto_migrate(app):
             db.session.rollback()
             print(f"[migrate] Skipped: {e}")
 
+        try:
+            inspector = inspect(db.engine)
+            cols = {c["name"]: c for c in inspector.get_columns("products")}
+            sku = cols.get("sku")
+            if sku and not sku["nullable"]:
+                db.session.execute(text("UPDATE products SET sku = NULL WHERE sku = ''"))
+                db.session.execute(text("ALTER TABLE products ALTER COLUMN sku DROP NOT NULL"))
+                db.session.commit()
+                print("[migrate] Made products.sku nullable, cleared empty SKUs")
+        except Exception as e:
+            db.session.rollback()
+            print(f"[migrate] Skipped: {e}")
+
 
 def create_app(config_class=Config):
     app = Flask(__name__)

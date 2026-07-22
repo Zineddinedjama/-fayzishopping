@@ -46,7 +46,7 @@ class Product(db.Model):
     price = db.Column(db.Integer, nullable=False)
     compare_price = db.Column(db.Integer, default=0)
     stock = db.Column(db.Integer, default=0)
-    sku = db.Column(db.String(50), unique=True, default="")
+    sku = db.Column(db.String(50), unique=True, nullable=True)
     category_id = db.Column(db.Integer, db.ForeignKey("categories.id"), nullable=False)
     is_active = db.Column(db.Boolean, default=True)
     is_featured = db.Column(db.Boolean, default=False)

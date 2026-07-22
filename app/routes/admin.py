@@ -14,6 +14,13 @@ logger = logging.getLogger(__name__)
 admin_bp = Blueprint("admin", __name__)
 
 
+def _generate_sku(name):
+    import re
+    import time
+    base = re.sub(r'[^A-Z0-9]', '', name.upper().replace(' ', ''))[:8]
+    return f"{base}-{int(time.time()) % 100000}"
+
+
 def admin_required(f):
     from functools import wraps
     @wraps(f)
@@ -117,7 +124,7 @@ def product_new():
                 price=int(request.form["price"]),
                 compare_price=int(request.form.get("compare_price", 0) or 0),
                 stock=int(request.form.get("stock", 0) or 0),
-                sku=request.form.get("sku", ""),
+                sku=request.form.get("sku", "").strip() or _generate_sku(request.form["name"]),
                 category_id=int(request.form["category_id"]),
                 is_active="is_active" in request.form,
                 is_featured="is_featured" in request.form,
@@ -172,7 +179,7 @@ def product_edit(product_id):
             product.price = int(request.form["price"])
             product.compare_price = int(request.form.get("compare_price", 0) or 0)
             product.stock = int(request.form.get("stock", 0) or 0)
-            product.sku = request.form.get("sku", "")
+            product.sku = request.form.get("sku", "").strip() or product.sku or _generate_sku(request.form["name"])
             product.category_id = int(request.form["category_id"])
             product.is_active = "is_active" in request.form
             product.is_featured = "is_featured" in request.form
