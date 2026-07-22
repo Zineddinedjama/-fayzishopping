@@ -17,6 +17,18 @@ def _auto_migrate(app):
             db.session.rollback()
             print(f"[migrate] Skipped: {e}")
 
+        try:
+            inspector = inspect(db.engine)
+            cols = {c["name"]: c for c in inspector.get_columns("order_items")}
+            pid = cols.get("product_id")
+            if pid and not pid["nullable"]:
+                db.session.execute(text("ALTER TABLE order_items ALTER COLUMN product_id DROP NOT NULL"))
+                db.session.commit()
+                print("[migrate] Made order_items.product_id nullable")
+        except Exception as e:
+            db.session.rollback()
+            print(f"[migrate] Skipped: {e}")
+
 
 def create_app(config_class=Config):
     app = Flask(__name__)

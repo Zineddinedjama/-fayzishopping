@@ -255,9 +255,24 @@ def _save_variants(product, req):
 @admin_required
 def product_delete(product_id):
     product = Product.query.get_or_404(product_id)
-    product.is_active = False
+
+    for img in product.images.all():
+        if img.url:
+            public_id = get_public_id_from_url(img.url)
+            if public_id:
+                try:
+                    cloudinary_delete(public_id)
+                except Exception:
+                    pass
+
+    from app.models import CartItem, WishlistItem, OrderItem
+    CartItem.query.filter_by(product_id=product.id).delete()
+    WishlistItem.query.filter_by(product_id=product.id).delete()
+    OrderItem.query.filter_by(product_id=product.id).update({"product_id": None, "variant_id": None})
+
+    db.session.delete(product)
     db.session.commit()
-    flash("Produit supprimé.", "success")
+    flash("Produit supprimé définitivement.", "success")
     return redirect(url_for("admin.products_list"))
 
 
