@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 
 try:
     import cloudinary
@@ -63,31 +64,28 @@ def upload_image(file, folder="fayzishopping/products"):
         if size_mb > 10:
             return None, f"Fichier trop volumineux ({size_mb:.1f} MB, max 10 MB)"
 
-        if size_mb > 4:
-            try:
-                from PIL import Image
-                import io
-                img = Image.open(file)
-                img.thumbnail((800, 800), Image.LANCZOS)
-                buf = io.BytesIO()
-                fmt = 'JPEG' if img.mode in ('RGB', 'RGBA') else 'PNG'
-                if img.mode == 'RGBA':
-                    img = img.convert('RGB')
-                    fmt = 'JPEG'
-                img.save(buf, format=fmt, quality=85, optimize=True)
-                buf.seek(0)
-                file = buf
-                logger.info("Image resized to %.1f MB for upload", buf.getbuffer().nbytes / (1024 * 1024))
-            except Exception as resize_err:
-                logger.warning("Resize failed, uploading original: %s", resize_err)
+        from app.utils.image_optimizer import optimize_image, sanitize_filename
 
-        import re
-        safe_name = re.sub(r'[^\w\-_\. ]', '_', file.filename)
+        optimized_file, used_format = optimize_image(file)
+        if optimized_file is file:
+            pass
+        else:
+            optimized_file.seek(0, 2)
+            new_size = optimized_file.tell() / (1024 * 1024)
+            optimized_file.seek(0)
+            logger.info("Upload after optimization: %.2f MB (was %.1f MB)", new_size, size_mb)
+
+        safe_name = sanitize_filename(file.filename)
+        base_name = safe_name.rsplit('.', 1)[0] if '.' in safe_name else safe_name
+
+        upload_file = optimized_file
+        resource_format = "auto"
 
         result = cloudinary.uploader.upload(
-            file,
+            upload_file,
             folder=folder,
-            public_id=safe_name.rsplit('.', 1)[0] if '.' in safe_name else safe_name,
+            public_id=base_name,
+            format=used_format if used_format else None,
             transformation=[
                 {"width": 800, "height": 800, "crop": "limit"},
                 {"quality": "auto"},
