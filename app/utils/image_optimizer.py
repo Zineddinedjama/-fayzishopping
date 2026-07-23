@@ -9,7 +9,26 @@ logger = logging.getLogger(__name__)
 MAX_DIMENSION = 1200
 WEBP_QUALITY = 82
 JPEG_QUALITY = 85
-JPEG_FALLBACK_THRESHOLD = 4 * 1024 * 1024
+
+HEIC_MAGIC = b"ftypheic"
+HEIF_MAGIC = b"ftypmif1"
+
+
+def _is_heic(data):
+    return HEIC_MAGIC in data[:32] or HEIF_MAGIC in data[:32]
+
+
+def _try_heic_to_pil(data):
+    try:
+        from pillow_heif import register_heif_opener
+        register_heif_opener()
+        return Image.open(io.BytesIO(data))
+    except ImportError:
+        logger.warning("pillow-heif not installed — cannot convert HEIC")
+        return None
+    except Exception as e:
+        logger.warning("HEIC conversion failed: %s", e)
+        return None
 
 
 def optimize_image(file, max_dimension=MAX_DIMENSION):
@@ -19,9 +38,17 @@ def optimize_image(file, max_dimension=MAX_DIMENSION):
         original_size = len(original_bytes)
         file.seek(0)
 
-        img = Image.open(io.BytesIO(original_bytes))
+        if _is_heic(original_bytes):
+            logger.info("Detected HEIC/HEIF image, attempting conversion")
+            img = _try_heic_to_pil(original_bytes)
+            if img is None:
+                logger.warning("HEIC conversion unavailable, uploading original")
+                file.seek(0)
+                return file, None
+        else:
+            img = Image.open(io.BytesIO(original_bytes))
+
         original_fmt = img.format
-        original_dimensions = img.size
 
         if img.mode == "RGBA":
             background = Image.new("RGB", img.size, (255, 255, 255))
