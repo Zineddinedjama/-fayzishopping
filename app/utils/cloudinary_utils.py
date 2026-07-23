@@ -67,9 +67,7 @@ def upload_image(file, folder="fayzishopping/products"):
         from app.utils.image_optimizer import optimize_image, sanitize_filename
 
         optimized_file, used_format = optimize_image(file)
-        if optimized_file is file:
-            pass
-        else:
+        if optimized_file is not file:
             optimized_file.seek(0, 2)
             new_size = optimized_file.tell() / (1024 * 1024)
             optimized_file.seek(0)
@@ -78,20 +76,20 @@ def upload_image(file, folder="fayzishopping/products"):
         safe_name = sanitize_filename(file.filename)
         base_name = safe_name.rsplit('.', 1)[0] if '.' in safe_name else safe_name
 
-        upload_file = optimized_file
-        resource_format = "auto"
+        optimized_file.seek(0)
 
-        result = cloudinary.uploader.upload(
-            upload_file,
-            folder=folder,
-            public_id=base_name,
-            format=used_format if used_format else None,
-            transformation=[
+        upload_params = {
+            "folder": folder,
+            "public_id": base_name,
+            "resource_type": "image",
+            "transformation": [
                 {"width": 800, "height": 800, "crop": "limit"},
                 {"quality": "auto"},
                 {"fetch_format": "auto"},
             ],
-        )
+        }
+
+        result = cloudinary.uploader.upload(optimized_file, **upload_params)
         url = result.get("secure_url")
         logger.info("Upload OK: %s -> %s", file.filename, url)
         return url, None
