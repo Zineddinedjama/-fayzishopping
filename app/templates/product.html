@@ -98,6 +98,7 @@
                         <input type="hidden" id="selected-variant-id" value="">
                         <input type="hidden" id="selected-variant-stock" value="">
                     </div>
+                </div>
                 {% endif %}
 
                 <div class="product-quantity-section">
@@ -260,8 +261,8 @@ function updateVariantOptions() {
     updateTotal();
 }
 
-function commander() {
-    const btn = document.getElementById('btn-commander');
+function addProductToCart() {
+    const btn = document.getElementById('add-to-cart-btn');
     if (!btn || btn.disabled) return;
     const variantId = document.getElementById('selected-variant-id')?.value || null;
     const quantity = parseInt(document.getElementById('product-quantity')?.value || 1);
@@ -275,8 +276,45 @@ function commander() {
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
         body: JSON.stringify({ product_id: PRODUCT_ID, variant_id: variantId ? parseInt(variantId) : null, quantity: quantity }),
     })
-    .then(r => r.json())
-    .then(data => {
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            showToast(data.message || 'Ajouté au panier !');
+            if (typeof updateCartCount === 'function') updateCartCount();
+            btn.disabled = false;
+            btn.textContent = '\u{1F6D2} Ajouter au panier';
+        } else {
+            showToast(data.error || 'Erreur', 'error');
+            btn.disabled = false;
+            btn.textContent = '\u{1F6D2} Ajouter au panier';
+        }
+    })
+    .catch(function() {
+        showToast('Erreur de connexion', 'error');
+        btn.disabled = false;
+        btn.textContent = '\u{1F6D2} Ajouter au panier';
+    });
+}
+
+function commander() {
+    var btn = document.getElementById('btn-commander');
+    if (!btn || btn.disabled) return;
+    var variantId = document.getElementById('selected-variant-id') ? document.getElementById('selected-variant-id').value : null;
+    var qtyEl = document.getElementById('product-quantity');
+    var quantity = qtyEl ? parseInt(qtyEl.value) || 1 : 1;
+    var csrfToken = document.querySelector('meta[name="csrf-token"]');
+    var token = csrfToken ? csrfToken.content : '';
+
+    btn.disabled = true;
+    btn.textContent = 'Ajout...';
+
+    fetch('/api/cart/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': token },
+        body: JSON.stringify({ product_id: PRODUCT_ID, variant_id: variantId ? parseInt(variantId) : null, quantity: quantity }),
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
         if (data.success) {
             window.location.href = '/cart';
         } else {
@@ -285,7 +323,7 @@ function commander() {
             btn.textContent = 'Commander';
         }
     })
-    .catch(() => {
+    .catch(function() {
         showToast('Erreur de connexion', 'error');
         btn.disabled = false;
         btn.textContent = 'Commander';
