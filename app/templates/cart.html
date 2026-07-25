@@ -50,75 +50,15 @@
                         <span>Sous-total</span>
                         <span id="cart-subtotal">{{ "{:,}".format(cart.total()).replace(",", " ") }} DA</span>
                     </div>
-
-                    <div class="cart-shipping-section">
-                        <div class="form-group">
-                            <label for="cart-fullname">Nom et prénom *</label>
-                            <input type="text" id="cart-fullname" class="form-control" placeholder="Ex: Ahmed Ben Ali" value="{{ saved_name }}">
-                            <span class="field-error" id="error-fullname"></span>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="cart-phone">Numéro de téléphone *</label>
-                            <input type="tel" id="cart-phone" class="form-control" placeholder="0555123456" maxlength="10" value="{{ saved_phone }}" inputmode="numeric">
-                            <span class="field-error" id="error-phone"></span>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="cart-wilaya">Wilaya de livraison *</label>
-                            <select id="cart-wilaya" class="form-control" onchange="onWilayaChange()">
-                                <option value="">Sélectionnez votre wilaya</option>
-                                {% for code, name in wilayas %}
-                                <option value="{{ name }}" {% if saved_wilaya == name %}selected{% endif %}>{{ name }}</option>
-                                {% endfor %}
-                            </select>
-                            <span class="field-error" id="error-wilaya"></span>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="cart-commune">Commune</label>
-                            <input type="text" id="cart-commune" class="form-control" placeholder="Votre commune (optionnel)" value="{{ saved_commune }}">
-                            <span class="field-error" id="error-commune"></span>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Type de livraison *</label>
-                            <div class="delivery-options">
-                                <label class="delivery-option">
-                                    <input type="radio" name="cart_delivery_type" value="bureau" {% if saved_delivery_type != 'domicile' %}checked{% endif %} onchange="updateCartShipping()">
-                                    <span class="delivery-radio"></span>
-                                    <span class="delivery-info">
-                                        <span class="delivery-name">Point relais (Bureau)</span>
-                                        <span class="delivery-price" id="cart-bureau-price">--</span>
-                                    </span>
-                                </label>
-                                <label class="delivery-option">
-                                    <input type="radio" name="cart_delivery_type" value="domicile" {% if saved_delivery_type == 'domicile' %}checked{% endif %} onchange="updateCartShipping()">
-                                    <span class="delivery-radio"></span>
-                                    <span class="delivery-info">
-                                        <span class="delivery-name">Livraison à domicile</span>
-                                        <span class="delivery-price" id="cart-domicile-price">--</span>
-                                    </span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="summary-line">
-                        <span>Livraison</span>
-                        <span id="cart-shipping-display">Choisissez une wilaya</span>
-                    </div>
                     <hr>
                     <div class="summary-line summary-total">
                         <span>Total</span>
-                        <span id="cart-total">{{ "{:,}".format(cart.total()).replace(",", " ") }} DA</span>
+                        <span>{{ "{:,}".format(cart.total()).replace(",", " ") }} DA</span>
                     </div>
 
-                    <div id="cart-validation-errors" class="cart-validation-box" style="display:none;"></div>
-
-                    <button type="button" class="btn btn-primary btn-lg btn-block" onclick="proceedToCheckout()">
-                        Passer la commande
-                    </button>
+                    <a href="{{ url_for('checkout.checkout') }}" class="btn btn-primary btn-lg btn-block">
+                        Commander
+                    </a>
                     <a href="{{ url_for('shop.catalog') }}" class="btn btn-outline btn-block">
                         Continuer les achats
                     </a>
@@ -135,120 +75,4 @@
         {% endif %}
     </div>
 </section>
-
-<script>
-var CART_SUBTOTAL = {{ cart.total() }};
-var CART_SHIPPING_RATES = {};
-var cartShippingCost = 0;
-
-document.getElementById('cart-phone').addEventListener('input', function() {
-    this.value = this.value.replace(/[^0-9]/g, '').substring(0, 10);
-});
-
-fetch('/api/shipping/all')
-    .then(function(r) { return r.json(); })
-    .then(function(data) { CART_SHIPPING_RATES = data; updateCartShipping(); })
-    .catch(function() {});
-
-function onWilayaChange() {
-    updateCartShipping();
-}
-
-function updateCartShipping() {
-    var wilayaEl = document.getElementById('cart-wilaya');
-    var wilaya = wilayaEl ? wilayaEl.value : '';
-    var checked = document.querySelector('input[name="cart_delivery_type"]:checked');
-    var deliveryType = checked ? checked.value : 'bureau';
-    var bureauPriceEl = document.getElementById('cart-bureau-price');
-    var domicilePriceEl = document.getElementById('cart-domicile-price');
-
-    if (wilaya && CART_SHIPPING_RATES[wilaya]) {
-        var rates = CART_SHIPPING_RATES[wilaya];
-        bureauPriceEl.textContent = rates.bureau.toLocaleString('fr-FR') + ' DA';
-        domicilePriceEl.textContent = rates.domicile.toLocaleString('fr-FR') + ' DA';
-        cartShippingCost = deliveryType === 'domicile' ? rates.domicile : rates.bureau;
-    } else {
-        bureauPriceEl.textContent = '--';
-        domicilePriceEl.textContent = '--';
-        cartShippingCost = 0;
-    }
-
-    document.getElementById('cart-shipping-display').textContent = cartShippingCost > 0 ? cartShippingCost.toLocaleString('fr-FR') + ' DA' : 'Gratuite';
-    document.getElementById('cart-total').textContent = (CART_SUBTOTAL + cartShippingCost).toLocaleString('fr-FR') + ' DA';
-}
-
-function clearErrors() {
-    var el = document.getElementById('cart-validation-errors');
-    if (el) { el.style.display = 'none'; el.innerHTML = ''; }
-    var fields = ['fullname', 'phone', 'wilaya', 'commune'];
-    for (var i = 0; i < fields.length; i++) {
-        var err = document.getElementById('error-' + fields[i]);
-        if (err) err.textContent = '';
-    }
-}
-
-function showError(fieldId, message) {
-    var err = document.getElementById('error-' + fieldId);
-    if (err) err.textContent = message;
-}
-
-function proceedToCheckout() {
-    clearErrors();
-    var errors = [];
-    var fullname = document.getElementById('cart-fullname').value.trim();
-    var phone = document.getElementById('cart-phone').value.replace(/\s/g, '');
-    var wilaya = document.getElementById('cart-wilaya').value;
-    var commune = document.getElementById('cart-commune').value.trim();
-    var deliveryType = 'bureau';
-    var checked = document.querySelector('input[name="cart_delivery_type"]:checked');
-    if (checked) deliveryType = checked.value;
-
-    if (!fullname) {
-        showError('fullname', 'Veuillez renseigner votre nom et prénom.');
-        errors.push('fullname');
-    }
-
-    var phoneDigits = phone.replace(/[^0-9]/g, '');
-    if (!phoneDigits) {
-        showError('phone', 'Le numéro de téléphone est requis.');
-        errors.push('phone');
-    } else if (phoneDigits.length !== 10) {
-        showError('phone', 'Le numéro doit contenir exactement 10 chiffres.');
-        errors.push('phone');
-    }
-
-    if (!wilaya) {
-        showError('wilaya', 'Veuillez sélectionner une wilaya.');
-        errors.push('wilaya');
-    }
-
-    if (errors.length > 0) {
-        var box = document.getElementById('cart-validation-errors');
-        box.textContent = 'Veuillez remplir tous les champs obligatoires.';
-        box.style.display = 'block';
-        return;
-    }
-
-    fetch('/api/cart/save-delivery', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            full_name: fullname,
-            phone: phoneDigits,
-            wilaya: wilaya,
-            commune: commune,
-            delivery_type: deliveryType
-        })
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-        if (data.success) {
-            window.location.href = '/checkout';
-        }
-    })
-    .catch(function() {
-        window.location.href = '/checkout';
-    });
-}
-</script>
 {% endblock %}

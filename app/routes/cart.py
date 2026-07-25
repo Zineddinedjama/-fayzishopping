@@ -2,7 +2,6 @@ from flask import Blueprint, request, session, jsonify, redirect, url_for, rende
 from app.extensions import db
 from app.models import Cart, CartItem, Product, ProductVariant
 from app.utils.helpers import generate_session_id
-from app.utils.shipping import ALGERIAN_WILAYAS
 
 cart_bp = Blueprint("cart", __name__)
 
@@ -23,34 +22,7 @@ def get_or_create_cart():
 @cart_bp.route("/cart")
 def view_cart():
     cart = get_or_create_cart()
-    wilayas = [(w[0], w[1]) for w in ALGERIAN_WILAYAS]
-    return render_template(
-        "cart.html",
-        cart=cart,
-        wilayas=wilayas,
-        saved_name=session.get("checkout_name", ""),
-        saved_phone=session.get("checkout_phone", ""),
-        saved_wilaya=session.get("checkout_wilaya", ""),
-        saved_commune=session.get("checkout_commune", ""),
-        saved_delivery_type=session.get("checkout_delivery_type", "bureau"),
-    )
-
-
-@cart_bp.route("/api/cart/save-delivery", methods=["POST"])
-def save_delivery():
-    data = request.get_json()
-    if data:
-        if data.get("full_name"):
-            session["checkout_name"] = data["full_name"]
-        if data.get("phone"):
-            session["checkout_phone"] = data["phone"]
-        if data.get("wilaya"):
-            session["checkout_wilaya"] = data["wilaya"]
-        if data.get("commune"):
-            session["checkout_commune"] = data["commune"]
-        if data.get("delivery_type"):
-            session["checkout_delivery_type"] = data["delivery_type"]
-    return jsonify({"success": True})
+    return render_template("cart.html", cart=cart)
 
 
 @cart_bp.route("/api/cart/add", methods=["POST"])
