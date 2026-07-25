@@ -53,19 +53,27 @@
 
                     <div class="cart-shipping-section">
                         <div class="form-group">
-                            <label for="cart-wilaya">Wilaya de livraison</label>
-                            <select id="cart-wilaya" class="form-control" onchange="updateCartShipping()">
+                            <label for="cart-wilaya">Wilaya de livraison *</label>
+                            <select id="cart-wilaya" class="form-control" onchange="onWilayaChange()">
                                 <option value="">Sélectionnez votre wilaya</option>
                                 {% for code, name in wilayas %}
-                                <option value="{{ name }}">{{ name }}</option>
+                                <option value="{{ name }}" {% if saved_wilaya == name %}selected{% endif %}>{{ name }}</option>
                                 {% endfor %}
                             </select>
+                            <span class="field-error" id="error-wilaya"></span>
                         </div>
+
                         <div class="form-group">
-                            <label>Type de livraison</label>
+                            <label for="cart-commune">Commune *</label>
+                            <input type="text" id="cart-commune" class="form-control" placeholder="Votre commune" value="{{ saved_commune }}">
+                            <span class="field-error" id="error-commune"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Type de livraison *</label>
                             <div class="delivery-options">
                                 <label class="delivery-option">
-                                    <input type="radio" name="cart_delivery_type" value="bureau" checked onchange="updateCartShipping()">
+                                    <input type="radio" name="cart_delivery_type" value="bureau" {% if saved_delivery_type != 'domicile' %}checked{% endif %} onchange="updateCartShipping()">
                                     <span class="delivery-radio"></span>
                                     <span class="delivery-info">
                                         <span class="delivery-name">Point relais (Bureau)</span>
@@ -73,7 +81,7 @@
                                     </span>
                                 </label>
                                 <label class="delivery-option">
-                                    <input type="radio" name="cart_delivery_type" value="domicile" onchange="updateCartShipping()">
+                                    <input type="radio" name="cart_delivery_type" value="domicile" {% if saved_delivery_type == 'domicile' %}checked{% endif %} onchange="updateCartShipping()">
                                     <span class="delivery-radio"></span>
                                     <span class="delivery-info">
                                         <span class="delivery-name">Livraison à domicile</span>
@@ -93,9 +101,12 @@
                         <span>Total</span>
                         <span id="cart-total">{{ "{:,}".format(cart.total()).replace(",", " ") }} DA</span>
                     </div>
-                    <a href="{{ url_for('checkout.checkout') }}" class="btn btn-primary btn-lg btn-block">
+
+                    <div id="cart-validation-errors" class="cart-validation-box" style="display:none;"></div>
+
+                    <button type="button" class="btn btn-primary btn-lg btn-block" onclick="proceedToCheckout()">
                         Passer la commande
-                    </a>
+                    </button>
                     <a href="{{ url_for('shop.catalog') }}" class="btn btn-outline btn-block">
                         Continuer les achats
                     </a>
@@ -114,23 +125,29 @@
 </section>
 
 <script>
-const CART_SUBTOTAL = {{ cart.total() }};
-let CART_SHIPPING_RATES = {};
-let cartShippingCost = 0;
+var CART_SUBTOTAL = {{ cart.total() }};
+var CART_SHIPPING_RATES = {};
+var cartShippingCost = 0;
 
 fetch('/api/shipping/all')
-    .then(r => r.json())
-    .then(data => { CART_SHIPPING_RATES = data; })
-    .catch(() => {});
+    .then(function(r) { return r.json(); })
+    .then(function(data) { CART_SHIPPING_RATES = data; updateCartShipping(); })
+    .catch(function() {});
+
+function onWilayaChange() {
+    updateCartShipping();
+}
 
 function updateCartShipping() {
-    const wilaya = document.getElementById('cart-wilaya').value;
-    const deliveryType = document.querySelector('input[name="cart_delivery_type"]:checked').value;
-    const bureauPriceEl = document.getElementById('cart-bureau-price');
-    const domicilePriceEl = document.getElementById('cart-domicile-price');
+    var wilayaEl = document.getElementById('cart-wilaya');
+    var wilaya = wilayaEl ? wilayaEl.value : '';
+    var checked = document.querySelector('input[name="cart_delivery_type"]:checked');
+    var deliveryType = checked ? checked.value : 'bureau';
+    var bureauPriceEl = document.getElementById('cart-bureau-price');
+    var domicilePriceEl = document.getElementById('cart-domicile-price');
 
     if (wilaya && CART_SHIPPING_RATES[wilaya]) {
-        const rates = CART_SHIPPING_RATES[wilaya];
+        var rates = CART_SHIPPING_RATES[wilaya];
         bureauPriceEl.textContent = rates.bureau.toLocaleString('fr-FR') + ' DA';
         domicilePriceEl.textContent = rates.domicile.toLocaleString('fr-FR') + ' DA';
         cartShippingCost = deliveryType === 'domicile' ? rates.domicile : rates.bureau;
@@ -142,6 +159,62 @@ function updateCartShipping() {
 
     document.getElementById('cart-shipping-display').textContent = cartShippingCost > 0 ? cartShippingCost.toLocaleString('fr-FR') + ' DA' : 'Gratuite';
     document.getElementById('cart-total').textContent = (CART_SUBTOTAL + cartShippingCost).toLocaleString('fr-FR') + ' DA';
+}
+
+function clearErrors() {
+    var el = document.getElementById('cart-validation-errors');
+    if (el) { el.style.display = 'none'; el.innerHTML = ''; }
+    var fields = ['wilaya', 'commune'];
+    for (var i = 0; i < fields.length; i++) {
+        var err = document.getElementById('error-' + fields[i]);
+        if (err) err.textContent = '';
+    }
+}
+
+function showError(fieldId, message) {
+    var err = document.getElementById('error-' + fieldId);
+    if (err) err.textContent = message;
+}
+
+function proceedToCheckout() {
+    clearErrors();
+    var errors = [];
+    var wilaya = document.getElementById('cart-wilaya').value;
+    var commune = document.getElementById('cart-commune').value.trim();
+    var deliveryType = 'bureau';
+    var checked = document.querySelector('input[name="cart_delivery_type"]:checked');
+    if (checked) deliveryType = checked.value;
+
+    if (!wilaya) {
+        showError('wilaya', 'Veuillez sélectionner une wilaya.');
+        errors.push('wilaya');
+    }
+    if (!commune) {
+        showError('commune', 'Veuillez renseigner votre commune.');
+        errors.push('commune');
+    }
+
+    if (errors.length > 0) {
+        var box = document.getElementById('cart-validation-errors');
+        box.textContent = 'Veuillez remplir tous les champs obligatoires.';
+        box.style.display = 'block';
+        return;
+    }
+
+    fetch('/api/cart/save-delivery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wilaya: wilaya, commune: commune, delivery_type: deliveryType })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            window.location.href = '/checkout';
+        }
+    })
+    .catch(function() {
+        window.location.href = '/checkout';
+    });
 }
 </script>
 {% endblock %}

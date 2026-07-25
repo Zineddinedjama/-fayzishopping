@@ -43,13 +43,13 @@
                             <select id="wilaya" name="wilaya" required class="form-control" onchange="updateShippingCost()">
                                 <option value="">Sélectionnez votre wilaya</option>
                                 {% for code, name, price in wilayas %}
-                                <option value="{{ name }}" data-price="{{ price }}">{{ name }} - {{ "{:,}".format(price).replace(",", " ") }} DA</option>
+                                <option value="{{ name }}" {% if saved_wilaya == name %}selected{% endif %}>{{ name }} - {{ "{:,}".format(price).replace(",", " ") }} DA</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="form-group">
                             <label for="commune">Commune *</label>
-                            <input type="text" id="commune" name="commune" required placeholder="Votre commune" class="form-control">
+                            <input type="text" id="commune" name="commune" required placeholder="Votre commune" class="form-control" value="{{ saved_commune }}">
                         </div>
                     </div>
 
@@ -57,7 +57,7 @@
                         <label>Type de livraison *</label>
                         <div class="delivery-options">
                             <label class="delivery-option">
-                                <input type="radio" name="delivery_type" value="bureau" checked onchange="updateShippingCost()">
+                                <input type="radio" name="delivery_type" value="bureau" {% if saved_delivery_type != 'domicile' %}checked{% endif %} onchange="updateShippingCost()">
                                 <span class="delivery-radio"></span>
                                 <span class="delivery-info">
                                     <span class="delivery-name">Point relais (Bureau)</span>
@@ -65,7 +65,7 @@
                                 </span>
                             </label>
                             <label class="delivery-option">
-                                <input type="radio" name="delivery_type" value="domicile" onchange="updateShippingCost()">
+                                <input type="radio" name="delivery_type" value="domicile" {% if saved_delivery_type == 'domicile' %}checked{% endif %} onchange="updateShippingCost()">
                                 <span class="delivery-radio"></span>
                                 <span class="delivery-info">
                                     <span class="delivery-name">Livraison à domicile</span>

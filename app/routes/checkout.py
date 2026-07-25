@@ -20,6 +20,8 @@ def checkout():
     saved_name = session.get("checkout_name", "")
     saved_phone = session.get("checkout_phone", "")
     saved_wilaya = session.get("checkout_wilaya", "")
+    saved_commune = session.get("checkout_commune", "")
+    saved_delivery_type = session.get("checkout_delivery_type", "bureau")
 
     return render_template(
         "checkout.html",
@@ -29,6 +31,8 @@ def checkout():
         saved_name=saved_name,
         saved_phone=saved_phone,
         saved_wilaya=saved_wilaya,
+        saved_commune=saved_commune,
+        saved_delivery_type=saved_delivery_type,
     )
 
 
@@ -117,6 +121,9 @@ def confirm_order():
         db.session.delete(cart_item)
     db.session.delete(cart)
     session.pop("cart_id", None)
+    session.pop("checkout_wilaya", None)
+    session.pop("checkout_commune", None)
+    session.pop("checkout_delivery_type", None)
 
     db.session.commit()
 

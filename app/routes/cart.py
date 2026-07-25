@@ -24,7 +24,27 @@ def get_or_create_cart():
 def view_cart():
     cart = get_or_create_cart()
     wilayas = [(w[0], w[1]) for w in ALGERIAN_WILAYAS]
-    return render_template("cart.html", cart=cart, wilayas=wilayas)
+    return render_template(
+        "cart.html",
+        cart=cart,
+        wilayas=wilayas,
+        saved_wilaya=session.get("checkout_wilaya", ""),
+        saved_commune=session.get("checkout_commune", ""),
+        saved_delivery_type=session.get("checkout_delivery_type", "bureau"),
+    )
+
+
+@cart_bp.route("/api/cart/save-delivery", methods=["POST"])
+def save_delivery():
+    data = request.get_json()
+    if data:
+        if data.get("wilaya"):
+            session["checkout_wilaya"] = data["wilaya"]
+        if data.get("commune"):
+            session["checkout_commune"] = data["commune"]
+        if data.get("delivery_type"):
+            session["checkout_delivery_type"] = data["delivery_type"]
+    return jsonify({"success": True})
 
 
 @cart_bp.route("/api/cart/add", methods=["POST"])
