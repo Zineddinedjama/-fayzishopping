@@ -70,6 +70,7 @@ def create_app(config_class=Config):
     app.register_blueprint(checkout_bp)
     app.register_blueprint(admin_bp, url_prefix="/admin")
     csrf.exempt(admin_bp)
+    csrf.exempt(cart_bp)
     app.register_blueprint(api_bp, url_prefix="/api")
 
     @app.context_processor

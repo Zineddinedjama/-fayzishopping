@@ -71,7 +71,8 @@ function addToCart(productId, variantId = null, quantity = 1) {
 
 /* ---- Update Cart Item ---- */
 function updateCartItem(itemId, quantity) {
-    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
+                      document.querySelector('input[name="csrf_token"]')?.value || '';
 
     fetch('/api/cart/update', {
         method: 'POST',
@@ -86,7 +87,8 @@ function updateCartItem(itemId, quantity) {
 
 /* ---- Remove Cart Item ---- */
 function removeCartItem(itemId) {
-    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
+                      document.querySelector('input[name="csrf_token"]')?.value || '';
 
     fetch('/api/cart/remove', {
         method: 'POST',

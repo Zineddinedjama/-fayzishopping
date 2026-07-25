@@ -152,22 +152,25 @@
         {% endif %}
     </div>
 </section>
+{% endblock %}
 
+{% block scripts %}
 <script>
 const PRODUCT_ID = {{ product.id }};
 const PRODUCT_PRICE = {{ product.price }};
-const PRODUCT_STOCK = {{ product.stock }};
+const PRODUCT_STOCK = {{ product.stock if product.stock is not none else 0 }};
 const VARIANTS = [
     {% for v in product.variants.all() %}
     {
         id: {{ v.id }},
         phone_model: "{{ v.phone_model or '' }}",
         color: "{{ v.color or '' }}",
-        stock: {{ v.stock }},
-        price: {{ v.price or product.price }}
+        stock: {{ v.stock if v.stock is not none else 0 }},
+        price: {{ v.price if v.price is not none else product.price }}
     },
     {% endfor %}
 ];
+
 function getUnitPrice() {
     const hiddenStock = document.getElementById('selected-variant-stock');
     if (hiddenStock && hiddenStock.value) {
