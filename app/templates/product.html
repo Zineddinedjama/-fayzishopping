@@ -157,6 +157,11 @@
 
 {% block scripts %}
 <script>
+(function() {
+    fetch('/api/product/{{ product.id }}/visit', {method: 'POST', headers: {'Content-Type': 'application/json'}});
+})();
+</script>
+<script>
 var PRODUCT_ID = {{ product.id }};
 var PRODUCT_PRICE = {{ product.price }};
 var PRODUCT_STOCK = {{ product.stock if product.stock is not none else 0 }};

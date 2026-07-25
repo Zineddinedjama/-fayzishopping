@@ -1,0 +1,139 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Stats - {{ product.name }}{% endblock %}
+{% block page_title %}Statistiques : {{ product.name }}{% endblock %}
+
+{% block admin_content %}
+<a href="{{ url_for('admin.products_list') }}" class="btn btn-sm btn-outline" style="margin-bottom:1rem;">&larr; Retour aux produits</a>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="stat-icon">&#128065;</span>
+        <div class="stat-info">
+            <h3>{{ total_views }}</h3>
+            <p>Total des vues</p>
+        </div>
+    </div>
+    <div class="stat-card stat-success">
+        <span class="stat-icon">&#128100;</span>
+        <div class="stat-info">
+            <h3>{{ unique_visitors }}</h3>
+            <p>Visiteurs uniques</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <span class="stat-icon">&#128102;</span>
+        <div class="stat-info">
+            <h3>{{ gender_data.get('male', 0) }}</h3>
+            <p>Hommes</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <span class="stat-icon">&#128103;</span>
+        <div class="stat-info">
+            <h3>{{ gender_data.get('female', 0) }}</h3>
+            <p>Femmes</p>
+        </div>
+    </div>
+    <div class="stat-card stat-warning">
+        <span class="stat-icon">&#10067;</span>
+        <div class="stat-info">
+            <h3>{{ gender_data.get('unknown', 0) }}</h3>
+            <p>Inconnu</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <span class="stat-icon">&#128197;</span>
+        <div class="stat-info">
+            <h3>{{ last_visit.created_at.strftime('%d/%m/%Y %H:%M') if last_visit else 'Aucune' }}</h3>
+            <p>Dernière visite</p>
+        </div>
+    </div>
+</div>
+
+<div class="admin-section">
+    <h3 style="margin-bottom:1rem;">Répartition par genre</h3>
+    <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+        {% set total_gender = gender_data.get('male', 0) + gender_data.get('female', 0) + gender_data.get('unknown', 0) %}
+        {% if total_gender > 0 %}
+        <div style="background:var(--gray-50);border-radius:var(--radius-sm);padding:1.2rem;text-align:center;">
+            <div style="font-size:2rem;margin-bottom:0.3rem;">&#128102;</div>
+            <div style="font-size:1.5rem;font-weight:700;">{{ gender_data.get('male', 0) }}</div>
+            <div style="font-size:0.85rem;color:var(--gray-500);">Hommes</div>
+            <div style="font-size:0.8rem;color:var(--blue);font-weight:600;margin-top:0.3rem;">{{ ((gender_data.get('male', 0) / total_gender) * 100)|round(1) }}%</div>
+        </div>
+        <div style="background:var(--gray-50);border-radius:var(--radius-sm);padding:1.2rem;text-align:center;">
+            <div style="font-size:2rem;margin-bottom:0.3rem;">&#128103;</div>
+            <div style="font-size:1.5rem;font-weight:700;">{{ gender_data.get('female', 0) }}</div>
+            <div style="font-size:0.85rem;color:var(--gray-500);">Femmes</div>
+            <div style="font-size:0.8rem;color:var(--pink, #ec4899);font-weight:600;margin-top:0.3rem;">{{ ((gender_data.get('female', 0) / total_gender) * 100)|round(1) }}%</div>
+        </div>
+        <div style="background:var(--gray-50);border-radius:var(--radius-sm);padding:1.2rem;text-align:center;">
+            <div style="font-size:2rem;margin-bottom:0.3rem;">&#10067;</div>
+            <div style="font-size:1.5rem;font-weight:700;">{{ gender_data.get('unknown', 0) }}</div>
+            <div style="font-size:0.85rem;color:var(--gray-500);">Inconnu</div>
+            <div style="font-size:0.8rem;color:var(--gray-400);font-weight:600;margin-top:0.3rem;">{{ ((gender_data.get('unknown', 0) / total_gender) * 100)|round(1) }}%</div>
+        </div>
+        {% else %}
+        <p style="color:var(--gray-500);">Aucune donnée de visite disponible.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="admin-section">
+    <h3 style="margin-bottom:1rem;">&#128200; Évolution des visites (30 derniers jours)</h3>
+    <canvas id="chart-daily" height="80" style="width:100%;max-height:300px;"></canvas>
+</div>
+
+<div class="admin-section">
+    <h3 style="margin-bottom:1rem;">&#128197; Visites hebdomadaires (12 dernières semaines)</h3>
+    <canvas id="chart-weekly" height="80" style="width:100%;max-height:300px;"></canvas>
+</div>
+
+<div class="admin-section">
+    <h3 style="margin-bottom:1rem;">&#128198; Visites mensuelles (6 derniers mois)</h3>
+    <canvas id="chart-monthly" height="80" style="width:100%;max-height:300px;"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+function makeChart(canvasId, labels, data, color) {
+    var ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Visites',
+                data: data,
+                backgroundColor: color,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                x: { ticks: { maxRotation: 45, font: { size: 10 } } }
+            }
+        }
+    });
+}
+
+makeChart('chart-daily',
+    [{% for d in daily %}'{{ d.date }}'{% if not loop.last %},{% endif %}{% endfor %}],
+    [{% for d in daily %}{{ d.count }}{% if not loop.last %},{% endif %}{% endfor %}],
+    'rgba(59,130,246,0.7)');
+
+makeChart('chart-weekly',
+    [{% for w in weekly %}'{{ w.date }}'{% if not loop.last %},{% endif %}{% endfor %}],
+    [{% for w in weekly %}{{ w.count }}{% if not loop.last %},{% endif %}{% endfor %}],
+    'rgba(16,185,129,0.7)');
+
+makeChart('chart-monthly',
+    [{% for m in monthly %}'{{ m.date }}'{% if not loop.last %},{% endif %}{% endfor %}],
+    [{% for m in monthly %}{{ m.count }}{% if not loop.last %},{% endif %}{% endfor %}],
+    'rgba(245,158,11,0.7)');
+</script>
+{% endblock %}

@@ -251,6 +251,18 @@ class ShippingRate(db.Model):
     is_active = db.Column(db.Boolean, default=True)
 
 
+class ProductVisit(db.Model):
+    __tablename__ = "product_visits"
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
+    visitor_id = db.Column(db.String(64), nullable=False, index=True)
+    ip_address = db.Column(db.String(45), default="")
+    user_agent = db.Column(db.Text, default="")
+    gender = db.Column(db.String(20), default="unknown")
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    product = db.relationship("Product", backref="visits")
+
+
 class SiteSettings(db.Model):
     __tablename__ = "site_settings"
     id = db.Column(db.Integer, primary_key=True)

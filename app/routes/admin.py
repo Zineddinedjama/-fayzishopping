@@ -4,7 +4,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from app.extensions import db
 from app.models import (
     Admin, Product, ProductImage, ProductVariant, Category,
-    Order, ShippingRate, SiteSettings, ContactMessage,
+    Order, ShippingRate, SiteSettings, ContactMessage, ProductVisit,
 )
 from app.utils.cloudinary_utils import upload_image, delete_image as cloudinary_delete, get_public_id_from_url
 from app.utils.helpers import slugify
@@ -449,3 +449,75 @@ def message_read(msg_id):
     db.session.commit()
     flash("Message marqué comme lu.", "success")
     return redirect(url_for("admin.messages_list"))
+
+
+@admin_bp.route("/products/<int:product_id>/stats")
+@admin_required
+def product_stats(product_id):
+    from datetime import datetime, timedelta, timezone
+
+    product = Product.query.get_or_404(product_id)
+
+    total_views = ProductVisit.query.filter_by(product_id=product_id).count()
+    unique_visitors = db.session.query(ProductVisit.visitor_id).filter_by(
+        product_id=product_id
+    ).distinct().count()
+
+    gender_counts = db.session.query(
+        ProductVisit.gender, db.func.count(ProductVisit.id)
+    ).filter_by(product_id=product_id).group_by(ProductVisit.gender).all()
+    gender_data = {g: c for g, c in gender_counts}
+
+    last_visit = ProductVisit.query.filter_by(
+        product_id=product_id
+    ).order_by(ProductVisit.created_at.desc()).first()
+
+    now = datetime.now(timezone.utc)
+
+    daily = []
+    for i in range(29, -1, -1):
+        day = (now - timedelta(days=i)).date()
+        count = ProductVisit.query.filter(
+            ProductVisit.product_id == product_id,
+            db.func.date(ProductVisit.created_at) == day,
+        ).count()
+        daily.append({"date": day.strftime("%d/%m"), "count": count})
+
+    weekly = []
+    for i in range(11, -1, -1):
+        week_start = (now - timedelta(weeks=i)).date()
+        week_end = week_start + timedelta(days=6)
+        count = ProductVisit.query.filter(
+            ProductVisit.product_id == product_id,
+            db.func.date(ProductVisit.created_at) >= week_start,
+            db.func.date(ProductVisit.created_at) <= week_end,
+        ).count()
+        weekly.append({"date": f"{week_start.strftime('%d/%m')}-{week_end.strftime('%d/%m')}", "count": count})
+
+    monthly = []
+    for i in range(5, -1, -1):
+        month_date = now - timedelta(days=30 * i)
+        month_start = month_date.replace(day=1).date()
+        if i > 0:
+            next_month = (month_start.replace(day=28) + timedelta(days=4)).replace(day=1)
+        else:
+            next_month = now.date().replace(day=1) + timedelta(days=32)
+            next_month = next_month.replace(day=1)
+        count = ProductVisit.query.filter(
+            ProductVisit.product_id == product_id,
+            db.func.date(ProductVisit.created_at) >= month_start,
+            db.func.date(ProductVisit.created_at) < next_month,
+        ).count()
+        monthly.append({"date": month_start.strftime("%b %Y"), "count": count})
+
+    return render_template(
+        "admin/product_stats.html",
+        product=product,
+        total_views=total_views,
+        unique_visitors=unique_visitors,
+        gender_data=gender_data,
+        last_visit=last_visit,
+        daily=daily,
+        weekly=weekly,
+        monthly=monthly,
+    )

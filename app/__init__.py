@@ -42,6 +42,29 @@ def _auto_migrate(app):
             db.session.rollback()
             print(f"[migrate] Skipped: {e}")
 
+        try:
+            inspector = inspect(db.engine)
+            tables = inspector.get_table_names()
+            if "product_visits" not in tables:
+                db.session.execute(text("""
+                    CREATE TABLE product_visits (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        product_id INTEGER NOT NULL,
+                        visitor_id VARCHAR(64) NOT NULL,
+                        ip_address VARCHAR(45) DEFAULT '',
+                        user_agent TEXT DEFAULT '',
+                        gender VARCHAR(20) DEFAULT 'unknown',
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (product_id) REFERENCES products(id)
+                    )
+                """))
+                db.session.execute(text("CREATE INDEX idx_product_visits_visitor ON product_visits(visitor_id)"))
+                db.session.commit()
+                print("[migrate] Created product_visits table")
+        except Exception as e:
+            db.session.rollback()
+            print(f"[migrate] Skipped: {e}")
+
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -71,6 +94,7 @@ def create_app(config_class=Config):
     app.register_blueprint(admin_bp, url_prefix="/admin")
     csrf.exempt(admin_bp)
     csrf.exempt(cart_bp)
+    csrf.exempt(api_bp)
     app.register_blueprint(api_bp, url_prefix="/api")
 
     @app.context_processor

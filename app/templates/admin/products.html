@@ -68,6 +68,7 @@
             <td class="actions-cell">
                 <a href="{{ url_for('shop.product_detail', slug=product.slug) }}" class="btn btn-sm btn-outline" target="_blank" title="Voir">&#128065;</a>
                 <a href="{{ url_for('admin.product_edit', product_id=product.id) }}" class="btn btn-sm btn-outline">Modifier</a>
+                <a href="{{ url_for('admin.product_stats', product_id=product.id) }}" class="btn btn-sm btn-outline" title="Stats">&#128200;</a>
                 <form method="POST" action="{{ url_for('admin.product_delete', product_id=product.id) }}" style="display:inline" onsubmit="return confirm('Supprimer ce produit ?')">
                     <button type="submit" class="btn btn-sm btn-danger">Supprimer</button>
                 </form>
