@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, Response
 from app.models import Product, Category, SiteSettings, ContactMessage
 
 main_bp = Blueprint("main", __name__)
@@ -30,6 +30,11 @@ def index():
         banner_subtitle=banner_subtitle,
         promo_banner=promo_banner,
     )
+
+
+@main_bp.route("/favicon.ico")
+def favicon():
+    return Response(status=204)
 
 
 @main_bp.route("/about")
