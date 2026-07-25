@@ -109,45 +109,7 @@
                     </div>
                 </div>
 
-                <div class="product-shipping-section">
-                    <label class="section-label">Wilaya de livraison :</label>
-                    <select id="wilaya-select" class="form-control" onchange="updateShipping()">
-                        <option value="">Sélectionnez votre wilaya</option>
-                        {% for code, name in wilayas %}
-                        <option value="{{ name }}">{{ name }}</option>
-                        {% endfor %}
-                    </select>
-
-                    <label class="section-label">Type de livraison :</label>
-                    <div class="delivery-options">
-                        <label class="delivery-option">
-                            <input type="radio" name="delivery_type" value="bureau" checked onchange="updateShipping()">
-                            <span class="delivery-radio"></span>
-                            <span class="delivery-info">
-                                <span class="delivery-name">Point relais (Bureau)</span>
-                                <span class="delivery-price" id="bureau-price">--</span>
-                            </span>
-                        </label>
-                        <label class="delivery-option">
-                            <input type="radio" name="delivery_type" value="domicile" onchange="updateShipping()">
-                            <span class="delivery-radio"></span>
-                            <span class="delivery-info">
-                                <span class="delivery-name">Livraison à domicile</span>
-                                <span class="delivery-price" id="domicile-price">--</span>
-                            </span>
-                        </label>
-                    </div>
-                </div>
-
                 <div class="product-total-section">
-                    <div class="total-line">
-                        <span>Prix produit</span>
-                        <span id="subtotal-display">{{ "{:,}".format(product.price).replace(",", " ") }} DA</span>
-                    </div>
-                    <div class="total-line">
-                        <span>Livraison</span>
-                        <span id="shipping-display">Choisissez une wilaya</span>
-                    </div>
                     <div class="total-line total-final">
                         <span>Total</span>
                         <span id="total-display">{{ "{:,}".format(product.price).replace(",", " ") }} DA</span>
@@ -206,14 +168,6 @@ const VARIANTS = [
     },
     {% endfor %}
 ];
-let SHIPPING_RATES = {};
-let currentShippingCost = 0;
-
-fetch('/api/shipping/all')
-    .then(r => r.json())
-    .then(data => { SHIPPING_RATES = data; })
-    .catch(() => {});
-
 function getUnitPrice() {
     const hiddenStock = document.getElementById('selected-variant-stock');
     if (hiddenStock && hiddenStock.value) {
@@ -240,34 +194,10 @@ function changeQty(delta) {
     updateTotal();
 }
 
-function updateShipping() {
-    const wilaya = document.getElementById('wilaya-select').value;
-    const deliveryType = document.querySelector('input[name="delivery_type"]:checked').value;
-
-    const bureauPriceEl = document.getElementById('bureau-price');
-    const domicilePriceEl = document.getElementById('domicile-price');
-
-    if (wilaya && SHIPPING_RATES[wilaya]) {
-        const rates = SHIPPING_RATES[wilaya];
-        bureauPriceEl.textContent = rates.bureau.toLocaleString('fr-FR') + ' DA';
-        domicilePriceEl.textContent = rates.domicile.toLocaleString('fr-FR') + ' DA';
-        currentShippingCost = deliveryType === 'domicile' ? rates.domicile : rates.bureau;
-    } else {
-        bureauPriceEl.textContent = '--';
-        domicilePriceEl.textContent = '--';
-        currentShippingCost = 0;
-    }
-    updateTotal();
-}
-
 function updateTotal() {
     const qty = parseInt(document.getElementById('product-quantity').value) || 1;
     const unitPrice = getUnitPrice();
-    const subtotal = unitPrice * qty;
-    const total = subtotal + currentShippingCost;
-
-    document.getElementById('subtotal-display').textContent = subtotal.toLocaleString('fr-FR') + ' DA';
-    document.getElementById('shipping-display').textContent = currentShippingCost > 0 ? currentShippingCost.toLocaleString('fr-FR') + ' DA' : 'Gratuite';
+    const total = unitPrice * qty;
     document.getElementById('total-display').textContent = total.toLocaleString('fr-FR') + ' DA';
 }
 

@@ -111,9 +111,10 @@ function changeImage(url, thumbBtn) {
 function changeQty(delta) {
     const input = document.getElementById('product-quantity');
     if (!input) return;
+    const max = parseInt(input.max) || 99;
     let val = parseInt(input.value) + delta;
     if (val < 1) val = 1;
-    if (val > 99) val = 99;
+    if (val > max) val = max;
     input.value = val;
     if (typeof updateTotal === 'function') updateTotal();
 }

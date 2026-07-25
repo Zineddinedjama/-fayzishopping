@@ -2,6 +2,7 @@ from flask import Blueprint, request, session, jsonify, redirect, url_for, rende
 from app.extensions import db
 from app.models import Cart, CartItem, Product, ProductVariant
 from app.utils.helpers import generate_session_id
+from app.utils.shipping import ALGERIAN_WILAYAS
 
 cart_bp = Blueprint("cart", __name__)
 
@@ -22,7 +23,8 @@ def get_or_create_cart():
 @cart_bp.route("/cart")
 def view_cart():
     cart = get_or_create_cart()
-    return render_template("cart.html", cart=cart)
+    wilayas = [(w[0], w[1]) for w in ALGERIAN_WILAYAS]
+    return render_template("cart.html", cart=cart, wilayas=wilayas)
 
 
 @cart_bp.route("/api/cart/add", methods=["POST"])

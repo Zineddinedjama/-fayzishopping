@@ -50,9 +50,43 @@
                         <span>Sous-total</span>
                         <span id="cart-subtotal">{{ "{:,}".format(cart.total()).replace(",", " ") }} DA</span>
                     </div>
+
+                    <div class="cart-shipping-section">
+                        <div class="form-group">
+                            <label for="cart-wilaya">Wilaya de livraison</label>
+                            <select id="cart-wilaya" class="form-control" onchange="updateCartShipping()">
+                                <option value="">Sélectionnez votre wilaya</option>
+                                {% for code, name in wilayas %}
+                                <option value="{{ name }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Type de livraison</label>
+                            <div class="delivery-options">
+                                <label class="delivery-option">
+                                    <input type="radio" name="cart_delivery_type" value="bureau" checked onchange="updateCartShipping()">
+                                    <span class="delivery-radio"></span>
+                                    <span class="delivery-info">
+                                        <span class="delivery-name">Point relais (Bureau)</span>
+                                        <span class="delivery-price" id="cart-bureau-price">--</span>
+                                    </span>
+                                </label>
+                                <label class="delivery-option">
+                                    <input type="radio" name="cart_delivery_type" value="domicile" onchange="updateCartShipping()">
+                                    <span class="delivery-radio"></span>
+                                    <span class="delivery-info">
+                                        <span class="delivery-name">Livraison à domicile</span>
+                                        <span class="delivery-price" id="cart-domicile-price">--</span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="summary-line">
                         <span>Livraison</span>
-                        <span class="text-muted">Calculée à l'étape suivante</span>
+                        <span id="cart-shipping-display">Choisissez une wilaya</span>
                     </div>
                     <hr>
                     <div class="summary-line summary-total">
@@ -78,4 +112,36 @@
         {% endif %}
     </div>
 </section>
+
+<script>
+const CART_SUBTOTAL = {{ cart.total() }};
+let CART_SHIPPING_RATES = {};
+let cartShippingCost = 0;
+
+fetch('/api/shipping/all')
+    .then(r => r.json())
+    .then(data => { CART_SHIPPING_RATES = data; })
+    .catch(() => {});
+
+function updateCartShipping() {
+    const wilaya = document.getElementById('cart-wilaya').value;
+    const deliveryType = document.querySelector('input[name="cart_delivery_type"]:checked').value;
+    const bureauPriceEl = document.getElementById('cart-bureau-price');
+    const domicilePriceEl = document.getElementById('cart-domicile-price');
+
+    if (wilaya && CART_SHIPPING_RATES[wilaya]) {
+        const rates = CART_SHIPPING_RATES[wilaya];
+        bureauPriceEl.textContent = rates.bureau.toLocaleString('fr-FR') + ' DA';
+        domicilePriceEl.textContent = rates.domicile.toLocaleString('fr-FR') + ' DA';
+        cartShippingCost = deliveryType === 'domicile' ? rates.domicile : rates.bureau;
+    } else {
+        bureauPriceEl.textContent = '--';
+        domicilePriceEl.textContent = '--';
+        cartShippingCost = 0;
+    }
+
+    document.getElementById('cart-shipping-display').textContent = cartShippingCost > 0 ? cartShippingCost.toLocaleString('fr-FR') + ' DA' : 'Gratuite';
+    document.getElementById('cart-total').textContent = (CART_SUBTOTAL + cartShippingCost).toLocaleString('fr-FR') + ' DA';
+}
+</script>
 {% endblock %}

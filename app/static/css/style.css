@@ -367,7 +367,7 @@ img { max-width: 100%; height: auto; display: block; }
 .btn-commander { flex: 2; background: var(--orange); color: var(--white); border: none; font-weight: 700; }
 .btn-commander:hover { background: #ea580c; }
 .btn-commander:disabled { background: var(--gray-300); cursor: not-allowed; }
-.product-actions .btn-add-to-cart { flex: 1; }
+.product-actions .btn-add-to-cart { flex: 1; width: 100%; }
 
 .product-guarantees { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.2rem; }
 .guarantee-item { font-size: 0.85rem; color: var(--gray-600); }
@@ -410,6 +410,35 @@ img { max-width: 100%; height: auto; display: block; }
 .text-muted { color: var(--gray-400); font-size: 0.82rem; }
 .cart-summary-box hr { border: none; border-top: 1px solid var(--gray-200); margin: 0.6rem 0; }
 .cart-summary-box .btn { margin-top: 0.8rem; }
+
+.cart-shipping-section { margin: 1rem 0; padding: 1rem; background: var(--gray-50); border-radius: var(--radius-sm); border: 1px solid var(--gray-200); }
+.cart-shipping-section .form-group { margin-bottom: 0.8rem; }
+.cart-shipping-section .form-group:last-child { margin-bottom: 0; }
+.cart-shipping-section .form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.3rem; color: var(--gray-700); }
+.cart-shipping-section .form-control { width: 100%; padding: 0.55rem 0.8rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm); font-size: 0.88rem; font-family: var(--font); background: var(--white); }
+.cart-shipping-section .delivery-options { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.4rem; }
+.cart-shipping-section .delivery-option {
+    display: flex; align-items: center; gap: 0.7rem; padding: 0.6rem 0.9rem;
+    border: 2px solid var(--gray-200); border-radius: var(--radius-sm); cursor: pointer;
+    transition: border-color var(--transition), background var(--transition);
+}
+.cart-shipping-section .delivery-option:hover { border-color: var(--blue); background: var(--blue-light); }
+.cart-shipping-section .delivery-option input[type="radio"] { display: none; }
+.cart-shipping-section .delivery-option input[type="radio"]:checked ~ .delivery-radio {
+    border-color: var(--blue); background: var(--blue);
+}
+.cart-shipping-section .delivery-option input[type="radio"]:checked ~ .delivery-radio::after {
+    content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 8px; height: 8px; border-radius: 50%; background: var(--white);
+}
+.cart-shipping-section .delivery-option input[type="radio"]:checked ~ .delivery-info .delivery-name { color: var(--blue); }
+.cart-shipping-section .delivery-radio {
+    width: 18px; height: 18px; border: 2px solid var(--gray-300); border-radius: 50%;
+    position: relative; flex-shrink: 0; transition: border-color var(--transition), background var(--transition);
+}
+.cart-shipping-section .delivery-info { display: flex; flex-direction: column; gap: 0.1rem; }
+.cart-shipping-section .delivery-name { font-size: 0.85rem; font-weight: 600; color: var(--gray-700); }
+.cart-shipping-section .delivery-price { font-size: 0.8rem; color: var(--gray-500); font-weight: 500; }
 
 /* ============ CHECKOUT ============ */
 .checkout-layout { display: grid; grid-template-columns: 1fr 380px; gap: 2rem; }
