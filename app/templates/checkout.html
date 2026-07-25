@@ -22,19 +22,13 @@
                     <h2>Informations de livraison</h2>
 
                     <div class="form-group">
-                        <label for="full_name">Nom complet *</label>
+                        <label for="full_name">Nom et prénom *</label>
                         <input type="text" id="full_name" name="full_name" required placeholder="Ex: Ahmed Ben Ali" class="form-control" value="{{ saved_name }}">
                     </div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="phone">Téléphone principal *</label>
-                            <input type="tel" id="phone" name="phone" required placeholder="0555 12 34 56" class="form-control" pattern="[0-9\s\-\+]{8,}" value="{{ saved_phone }}">
-                        </div>
-                        <div class="form-group">
-                            <label for="phone_secondary">Téléphone secondaire</label>
-                            <input type="tel" id="phone_secondary" name="phone_secondary" placeholder="0777 98 76 54" class="form-control">
-                        </div>
+                    <div class="form-group">
+                        <label for="phone">Numéro de téléphone *</label>
+                        <input type="tel" id="phone" name="phone" required placeholder="0555123456" class="form-control" pattern="[0-9]{10}" maxlength="10" inputmode="numeric" value="{{ saved_phone }}">
                     </div>
 
                     <div class="form-row">
@@ -48,8 +42,8 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="commune">Commune *</label>
-                            <input type="text" id="commune" name="commune" required placeholder="Votre commune" class="form-control" value="{{ saved_commune }}">
+                            <label for="commune">Commune</label>
+                            <input type="text" id="commune" name="commune" placeholder="Votre commune (optionnel)" class="form-control" value="{{ saved_commune }}">
                         </div>
                     </div>
 

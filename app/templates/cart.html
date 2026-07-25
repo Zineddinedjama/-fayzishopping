@@ -53,6 +53,18 @@
 
                     <div class="cart-shipping-section">
                         <div class="form-group">
+                            <label for="cart-fullname">Nom et prénom *</label>
+                            <input type="text" id="cart-fullname" class="form-control" placeholder="Ex: Ahmed Ben Ali" value="{{ saved_name }}">
+                            <span class="field-error" id="error-fullname"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cart-phone">Numéro de téléphone *</label>
+                            <input type="tel" id="cart-phone" class="form-control" placeholder="0555123456" maxlength="10" value="{{ saved_phone }}" inputmode="numeric">
+                            <span class="field-error" id="error-phone"></span>
+                        </div>
+
+                        <div class="form-group">
                             <label for="cart-wilaya">Wilaya de livraison *</label>
                             <select id="cart-wilaya" class="form-control" onchange="onWilayaChange()">
                                 <option value="">Sélectionnez votre wilaya</option>
@@ -64,8 +76,8 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="cart-commune">Commune *</label>
-                            <input type="text" id="cart-commune" class="form-control" placeholder="Votre commune" value="{{ saved_commune }}">
+                            <label for="cart-commune">Commune</label>
+                            <input type="text" id="cart-commune" class="form-control" placeholder="Votre commune (optionnel)" value="{{ saved_commune }}">
                             <span class="field-error" id="error-commune"></span>
                         </div>
 
@@ -129,6 +141,10 @@ var CART_SUBTOTAL = {{ cart.total() }};
 var CART_SHIPPING_RATES = {};
 var cartShippingCost = 0;
 
+document.getElementById('cart-phone').addEventListener('input', function() {
+    this.value = this.value.replace(/[^0-9]/g, '').substring(0, 10);
+});
+
 fetch('/api/shipping/all')
     .then(function(r) { return r.json(); })
     .then(function(data) { CART_SHIPPING_RATES = data; updateCartShipping(); })
@@ -164,7 +180,7 @@ function updateCartShipping() {
 function clearErrors() {
     var el = document.getElementById('cart-validation-errors');
     if (el) { el.style.display = 'none'; el.innerHTML = ''; }
-    var fields = ['wilaya', 'commune'];
+    var fields = ['fullname', 'phone', 'wilaya', 'commune'];
     for (var i = 0; i < fields.length; i++) {
         var err = document.getElementById('error-' + fields[i]);
         if (err) err.textContent = '';
@@ -179,19 +195,31 @@ function showError(fieldId, message) {
 function proceedToCheckout() {
     clearErrors();
     var errors = [];
+    var fullname = document.getElementById('cart-fullname').value.trim();
+    var phone = document.getElementById('cart-phone').value.replace(/\s/g, '');
     var wilaya = document.getElementById('cart-wilaya').value;
     var commune = document.getElementById('cart-commune').value.trim();
     var deliveryType = 'bureau';
     var checked = document.querySelector('input[name="cart_delivery_type"]:checked');
     if (checked) deliveryType = checked.value;
 
+    if (!fullname) {
+        showError('fullname', 'Veuillez renseigner votre nom et prénom.');
+        errors.push('fullname');
+    }
+
+    var phoneDigits = phone.replace(/[^0-9]/g, '');
+    if (!phoneDigits) {
+        showError('phone', 'Le numéro de téléphone est requis.');
+        errors.push('phone');
+    } else if (phoneDigits.length !== 10) {
+        showError('phone', 'Le numéro doit contenir exactement 10 chiffres.');
+        errors.push('phone');
+    }
+
     if (!wilaya) {
         showError('wilaya', 'Veuillez sélectionner une wilaya.');
         errors.push('wilaya');
-    }
-    if (!commune) {
-        showError('commune', 'Veuillez renseigner votre commune.');
-        errors.push('commune');
     }
 
     if (errors.length > 0) {
@@ -204,7 +232,13 @@ function proceedToCheckout() {
     fetch('/api/cart/save-delivery', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wilaya: wilaya, commune: commune, delivery_type: deliveryType })
+        body: JSON.stringify({
+            full_name: fullname,
+            phone: phoneDigits,
+            wilaya: wilaya,
+            commune: commune,
+            delivery_type: deliveryType
+        })
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {

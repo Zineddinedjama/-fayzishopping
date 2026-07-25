@@ -28,6 +28,8 @@ def view_cart():
         "cart.html",
         cart=cart,
         wilayas=wilayas,
+        saved_name=session.get("checkout_name", ""),
+        saved_phone=session.get("checkout_phone", ""),
         saved_wilaya=session.get("checkout_wilaya", ""),
         saved_commune=session.get("checkout_commune", ""),
         saved_delivery_type=session.get("checkout_delivery_type", "bureau"),
@@ -38,6 +40,10 @@ def view_cart():
 def save_delivery():
     data = request.get_json()
     if data:
+        if data.get("full_name"):
+            session["checkout_name"] = data["full_name"]
+        if data.get("phone"):
+            session["checkout_phone"] = data["phone"]
         if data.get("wilaya"):
             session["checkout_wilaya"] = data["wilaya"]
         if data.get("commune"):

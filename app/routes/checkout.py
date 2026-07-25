@@ -45,8 +45,7 @@ def confirm_order():
         return redirect(url_for("cart.view_cart"))
 
     full_name = request.form.get("full_name", "").strip()
-    phone = request.form.get("phone", "").strip()
-    phone_secondary = request.form.get("phone_secondary", "").strip()
+    phone = request.form.get("phone", "").strip().replace(" ", "")
     wilaya = request.form.get("wilaya", "").strip()
     commune = request.form.get("commune", "").strip()
     address = request.form.get("address", "").strip()
@@ -54,13 +53,11 @@ def confirm_order():
 
     errors = []
     if not full_name:
-        errors.append("Le nom complet est requis.")
-    if not phone or len(phone) < 8:
-        errors.append("Numéro de téléphone invalide.")
+        errors.append("Le nom et prénom sont requis.")
+    if not phone or not phone.isdigit() or len(phone) != 10:
+        errors.append("Le numéro de téléphone doit contenir exactement 10 chiffres.")
     if not wilaya:
         errors.append("La wilaya est requise.")
-    if not commune:
-        errors.append("La commune est requise.")
     if not address:
         errors.append("L'adresse est requise.")
 
@@ -83,7 +80,6 @@ def confirm_order():
         order_number=generate_order_number(),
         full_name=full_name,
         phone=phone,
-        phone_secondary=phone_secondary,
         wilaya=wilaya,
         commune=commune,
         address=address,
@@ -121,6 +117,8 @@ def confirm_order():
         db.session.delete(cart_item)
     db.session.delete(cart)
     session.pop("cart_id", None)
+    session.pop("checkout_name", None)
+    session.pop("checkout_phone", None)
     session.pop("checkout_wilaya", None)
     session.pop("checkout_commune", None)
     session.pop("checkout_delivery_type", None)
