@@ -322,7 +322,7 @@ function commander() {
     .then(function(r) { return r.json(); })
     .then(function(data) {
         if (data.success) {
-            window.location.href = '/cart';
+            window.location.href = '/checkout';
         } else {
             if (typeof showToast === 'function') showToast(data.error || 'Erreur', 'error');
             btn.disabled = false;
