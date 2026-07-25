@@ -48,7 +48,6 @@ def confirm_order():
     phone = request.form.get("phone", "").strip().replace(" ", "")
     wilaya = request.form.get("wilaya", "").strip()
     commune = request.form.get("commune", "").strip()
-    address = request.form.get("address", "").strip()
     notes = request.form.get("notes", "").strip()
 
     errors = []
@@ -58,8 +57,6 @@ def confirm_order():
         errors.append("Le numéro de téléphone doit contenir exactement 10 chiffres.")
     if not wilaya:
         errors.append("La wilaya est requise.")
-    if not address:
-        errors.append("L'adresse est requise.")
 
     if errors:
         for e in errors:
@@ -82,7 +79,6 @@ def confirm_order():
         phone=phone,
         wilaya=wilaya,
         commune=commune,
-        address=address,
         notes=notes,
         subtotal=subtotal,
         shipping_cost=shipping_cost,

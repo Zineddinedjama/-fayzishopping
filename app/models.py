@@ -173,7 +173,7 @@ class Order(db.Model):
     phone_secondary = db.Column(db.String(20), default="")
     wilaya = db.Column(db.String(100), nullable=False)
     commune = db.Column(db.String(100), nullable=False)
-    address = db.Column(db.Text, nullable=False)
+    address = db.Column(db.Text, default="")
     notes = db.Column(db.Text, default="")
     subtotal = db.Column(db.Integer, default=0)
     shipping_cost = db.Column(db.Integer, default=0)
