@@ -157,10 +157,13 @@
 
 {% block scripts %}
 <script>
-const PRODUCT_ID = {{ product.id }};
-const PRODUCT_PRICE = {{ product.price }};
-const PRODUCT_STOCK = {{ product.stock if product.stock is not none else 0 }};
-const VARIANTS = [
+var PRODUCT_ID = {{ product.id }};
+var PRODUCT_PRICE = {{ product.price }};
+var PRODUCT_STOCK = {{ product.stock if product.stock is not none else 0 }};
+if (typeof showToast !== 'function') {
+    window.showToast = function(msg) { alert(msg); };
+}
+var VARIANTS = [
     {% for v in product.variants.all() %}
     {
         id: {{ v.id }},
@@ -262,11 +265,14 @@ function updateVariantOptions() {
 }
 
 function addProductToCart() {
-    const btn = document.getElementById('add-to-cart-btn');
+    var btn = document.getElementById('add-to-cart-btn');
     if (!btn || btn.disabled) return;
-    const variantId = document.getElementById('selected-variant-id')?.value || null;
-    const quantity = parseInt(document.getElementById('product-quantity')?.value || 1);
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    var sel = document.getElementById('selected-variant-id');
+    var variantId = sel && sel.value ? sel.value : null;
+    var qtyEl = document.getElementById('product-quantity');
+    var quantity = qtyEl ? parseInt(qtyEl.value) || 1 : 1;
+    var csrfEl = document.querySelector('meta[name="csrf-token"]');
+    var csrfToken = csrfEl ? csrfEl.content : '';
 
     btn.disabled = true;
     btn.textContent = 'Ajout...';
@@ -279,20 +285,20 @@ function addProductToCart() {
     .then(function(r) { return r.json(); })
     .then(function(data) {
         if (data.success) {
-            showToast(data.message || 'Ajouté au panier !');
+            if (typeof showToast === 'function') showToast(data.message || 'Ajoute au panier !');
             if (typeof updateCartCount === 'function') updateCartCount();
             btn.disabled = false;
-            btn.textContent = '\u{1F6D2} Ajouter au panier';
+            btn.textContent = 'Ajouter au panier';
         } else {
-            showToast(data.error || 'Erreur', 'error');
+            if (typeof showToast === 'function') showToast(data.error || 'Erreur', 'error');
             btn.disabled = false;
-            btn.textContent = '\u{1F6D2} Ajouter au panier';
+            btn.textContent = 'Ajouter au panier';
         }
     })
     .catch(function() {
-        showToast('Erreur de connexion', 'error');
+        if (typeof showToast === 'function') showToast('Erreur de connexion', 'error');
         btn.disabled = false;
-        btn.textContent = '\u{1F6D2} Ajouter au panier';
+        btn.textContent = 'Ajouter au panier';
     });
 }
 
@@ -318,13 +324,13 @@ function commander() {
         if (data.success) {
             window.location.href = '/cart';
         } else {
-            showToast(data.error || 'Erreur', 'error');
+            if (typeof showToast === 'function') showToast(data.error || 'Erreur', 'error');
             btn.disabled = false;
             btn.textContent = 'Commander';
         }
     })
     .catch(function() {
-        showToast('Erreur de connexion', 'error');
+        if (typeof showToast === 'function') showToast('Erreur de connexion', 'error');
         btn.disabled = false;
         btn.textContent = 'Commander';
     });
