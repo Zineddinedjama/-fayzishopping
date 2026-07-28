@@ -34,7 +34,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="wilaya">Wilaya *</label>
-                            <select id="wilaya" name="wilaya" required class="form-control" onchange="updateShippingCost()">
+                            <select id="wilaya" name="wilaya" required class="form-control">
                                 <option value="">Sélectionnez votre wilaya</option>
                                 {% for code, name, price in wilayas %}
                                 <option value="{{ name }}" {% if saved_wilaya == name %}selected{% endif %}>{{ name }} - {{ "{:,}".format(price).replace(",", " ") }} DA</option>
@@ -51,21 +51,21 @@
                         <label>Type de livraison *</label>
                         <div class="delivery-options">
                             <label class="delivery-option">
-                                <input type="radio" name="delivery_type" value="bureau" {% if saved_delivery_type != 'domicile' %}checked{% endif %} onchange="updateShippingCost()">
-                                <span class="delivery-radio"></span>
-                                <span class="delivery-info">
-                                    <span class="delivery-name">Point relais (Bureau)</span>
-                                    <span class="delivery-price" id="bureau-price-display">--</span>
-                                </span>
-                            </label>
-                            <label class="delivery-option">
-                                <input type="radio" name="delivery_type" value="domicile" {% if saved_delivery_type == 'domicile' %}checked{% endif %} onchange="updateShippingCost()">
-                                <span class="delivery-radio"></span>
-                                <span class="delivery-info">
-                                    <span class="delivery-name">Livraison à domicile</span>
-                                    <span class="delivery-price" id="domicile-price-display">--</span>
-                                </span>
-                            </label>
+                                    <input type="radio" name="delivery_type" value="bureau" {% if saved_delivery_type != 'domicile' %}checked{% endif %}>
+                                    <span class="delivery-radio"></span>
+                                    <span class="delivery-info">
+                                        <span class="delivery-name">Point relais (Bureau)</span>
+                                        <span class="delivery-price" id="bureau-price-display">--</span>
+                                    </span>
+                                </label>
+                                <label class="delivery-option">
+                                    <input type="radio" name="delivery_type" value="domicile" {% if saved_delivery_type == 'domicile' %}checked{% endif %}>
+                                    <span class="delivery-radio"></span>
+                                    <span class="delivery-info">
+                                        <span class="delivery-name">Livraison à domicile</span>
+                                        <span class="delivery-price" id="domicile-price-display">--</span>
+                                    </span>
+                                </label>
                         </div>
                     </div>
 
@@ -141,12 +141,17 @@ function updateShippingCost() {
     var checked = document.querySelector('input[name="delivery_type"]:checked');
     if (checked) deliveryType = checked.value;
     var cost = 0;
+    var bureauPrice = 0;
+    var domicilePrice = 0;
 
     if (wilaya && WILAYA_SHIPPING[wilaya]) {
-        cost = WILAYA_SHIPPING[wilaya];
-        if (deliveryType === 'domicile') cost += 150;
+        bureauPrice = WILAYA_SHIPPING[wilaya];
+        domicilePrice = bureauPrice + 150;
+        cost = deliveryType === 'domicile' ? domicilePrice : bureauPrice;
     }
 
+    document.getElementById('bureau-price-display').textContent = bureauPrice > 0 ? bureauPrice.toLocaleString('fr-FR') + ' DA' : '--';
+    document.getElementById('domicile-price-display').textContent = domicilePrice > 0 ? domicilePrice.toLocaleString('fr-FR') + ' DA' : '--';
     document.getElementById('shipping-cost-display').textContent = cost > 0 ? cost.toLocaleString('fr-FR') + ' DA' : (wilaya ? 'Gratuite' : 'Choisissez une wilaya');
     document.getElementById('total-display').textContent = (SUBTOTAL + cost).toLocaleString('fr-FR') + ' DA';
 }
