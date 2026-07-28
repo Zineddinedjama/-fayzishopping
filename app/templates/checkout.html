@@ -139,25 +139,31 @@ let SHIPPING_RATES = {};
 fetch('/api/shipping/all?_=' + Date.now())
     .then(r => r.json())
     .then(data => { SHIPPING_RATES = data; updateShippingCost(); })
-    .catch(() => {});
+    .catch(() => updateShippingCost());
 
 function updateShippingCost() {
     const wilaya = document.getElementById('wilaya').value;
-    const deliveryType = document.querySelector('input[name="delivery_type"]:checked')?.value || 'bureau';
+    const checked = document.querySelector('input[name="delivery_type"]:checked');
+    const deliveryType = checked ? checked.value : 'bureau';
     let cost = 0;
+    let bureauPrice = 0;
+    let domicilePrice = 0;
 
     if (wilaya && SHIPPING_RATES[wilaya]) {
         const rates = SHIPPING_RATES[wilaya];
-        cost = deliveryType === 'domicile' ? rates.domicile : rates.bureau;
-        document.getElementById('bureau-price-display').textContent = rates.bureau.toLocaleString('fr-FR') + ' DA';
-        document.getElementById('domicile-price-display').textContent = rates.domicile.toLocaleString('fr-FR') + ' DA';
+        bureauPrice = rates.bureau;
+        domicilePrice = rates.domicile;
     } else if (wilaya && WILAYA_SHIPPING[wilaya]) {
-        cost = WILAYA_SHIPPING[wilaya];
+        bureauPrice = WILAYA_SHIPPING[wilaya];
+        domicilePrice = WILAYA_SHIPPING[wilaya] + 150;
     }
 
-    const total = SUBTOTAL + cost;
-    document.getElementById('shipping-cost-display').textContent = cost > 0 ? cost.toLocaleString('fr-FR') + ' DA' : 'Gratuite';
-    document.getElementById('total-display').textContent = total.toLocaleString('fr-FR') + ' DA';
+    cost = deliveryType === 'domicile' ? domicilePrice : bureauPrice;
+
+    document.getElementById('bureau-price-display').textContent = bureauPrice > 0 ? bureauPrice.toLocaleString('fr-FR') + ' DA' : '--';
+    document.getElementById('domicile-price-display').textContent = domicilePrice > 0 ? domicilePrice.toLocaleString('fr-FR') + ' DA' : '--';
+    document.getElementById('shipping-cost-display').textContent = cost > 0 ? cost.toLocaleString('fr-FR') + ' DA' : (wilaya ? 'Gratuite' : 'Choisissez une wilaya');
+    document.getElementById('total-display').textContent = (SUBTOTAL + cost).toLocaleString('fr-FR') + ' DA';
 }
 </script>
 {% endblock %}
