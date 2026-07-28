@@ -145,18 +145,28 @@ def track_order():
 def shipping_cost():
     wilaya = request.args.get("wilaya", "")
     if not wilaya:
-        return jsonify({"cost": 0})
-    cost = get_shipping_cost(wilaya)
-    return jsonify({"cost": cost})
+        resp = jsonify({"cost": 0})
+    else:
+        cost = get_shipping_cost(wilaya)
+        resp = jsonify({"cost": cost})
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    resp.headers["Pragma"] = "no-cache"
+    resp.headers["Expires"] = "0"
+    return resp
 
 
 @checkout_bp.route("/api/shipping/rates")
 def shipping_rates():
     wilaya = request.args.get("wilaya", "")
     if not wilaya:
-        return jsonify({"bureau": 0, "domicile": 0})
-    rates = get_shipping_rates(wilaya)
-    return jsonify(rates)
+        resp = jsonify({"bureau": 0, "domicile": 0})
+    else:
+        rates = get_shipping_rates(wilaya)
+        resp = jsonify(rates)
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    resp.headers["Pragma"] = "no-cache"
+    resp.headers["Expires"] = "0"
+    return resp
 
 
 @checkout_bp.route("/api/shipping/all")
@@ -168,4 +178,8 @@ def all_shipping_rates():
             "bureau": r.price,
             "domicile": r.home_delivery_price or (r.price + 150),
         }
-    return jsonify(result)
+    resp = jsonify(result)
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    resp.headers["Pragma"] = "no-cache"
+    resp.headers["Expires"] = "0"
+    return resp

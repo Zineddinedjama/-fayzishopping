@@ -136,7 +136,7 @@ const WILAYA_SHIPPING = {
 };
 let SHIPPING_RATES = {};
 
-fetch('/api/shipping/all')
+fetch('/api/shipping/all?_=' + Date.now())
     .then(r => r.json())
     .then(data => { SHIPPING_RATES = data; updateShippingCost(); })
     .catch(() => {});
