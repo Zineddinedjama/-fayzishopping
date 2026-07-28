@@ -128,42 +128,34 @@
 </section>
 
 <script>
-const SUBTOTAL = {{ subtotal }};
-const WILAYA_SHIPPING = {
+var SUBTOTAL = {{ subtotal }};
+var WILAYA_SHIPPING = {
     {% for code, name, price in wilayas %}
     "{{ name }}": {{ price }},
     {% endfor %}
 };
-let SHIPPING_RATES = {};
-
-fetch('/api/shipping/all?_=' + Date.now())
-    .then(r => r.json())
-    .then(data => { SHIPPING_RATES = data; updateShippingCost(); })
-    .catch(() => updateShippingCost());
 
 function updateShippingCost() {
-    const wilaya = document.getElementById('wilaya').value;
-    const checked = document.querySelector('input[name="delivery_type"]:checked');
-    const deliveryType = checked ? checked.value : 'bureau';
-    let cost = 0;
-    let bureauPrice = 0;
-    let domicilePrice = 0;
+    var wilaya = document.getElementById('wilaya').value;
+    var deliveryType = 'bureau';
+    var checked = document.querySelector('input[name="delivery_type"]:checked');
+    if (checked) deliveryType = checked.value;
+    var cost = 0;
 
-    if (wilaya && SHIPPING_RATES[wilaya]) {
-        const rates = SHIPPING_RATES[wilaya];
-        bureauPrice = rates.bureau;
-        domicilePrice = rates.domicile;
-    } else if (wilaya && WILAYA_SHIPPING[wilaya]) {
-        bureauPrice = WILAYA_SHIPPING[wilaya];
-        domicilePrice = WILAYA_SHIPPING[wilaya] + 150;
+    if (wilaya && WILAYA_SHIPPING[wilaya]) {
+        cost = WILAYA_SHIPPING[wilaya];
+        if (deliveryType === 'domicile') cost += 150;
     }
 
-    cost = deliveryType === 'domicile' ? domicilePrice : bureauPrice;
-
-    document.getElementById('bureau-price-display').textContent = bureauPrice > 0 ? bureauPrice.toLocaleString('fr-FR') + ' DA' : '--';
-    document.getElementById('domicile-price-display').textContent = domicilePrice > 0 ? domicilePrice.toLocaleString('fr-FR') + ' DA' : '--';
     document.getElementById('shipping-cost-display').textContent = cost > 0 ? cost.toLocaleString('fr-FR') + ' DA' : (wilaya ? 'Gratuite' : 'Choisissez une wilaya');
     document.getElementById('total-display').textContent = (SUBTOTAL + cost).toLocaleString('fr-FR') + ' DA';
 }
+
+document.getElementById('wilaya').addEventListener('change', updateShippingCost);
+document.querySelectorAll('input[name="delivery_type"]').forEach(function(el) {
+    el.addEventListener('change', updateShippingCost);
+});
+
+{% if saved_wilaya %}updateShippingCost();{% endif %}
 </script>
 {% endblock %}
